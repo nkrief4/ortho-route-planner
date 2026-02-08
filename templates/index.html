@@ -459,6 +459,20 @@
             font-weight: 500;
         }
 
+        .ortho-name-link {
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            padding: 2px 4px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        .ortho-name-link:hover {
+            background: var(--surface-2);
+            text-decoration: underline;
+        }
+
         .route-duration {
             font-size: 12px;
             color: var(--text-muted);
@@ -543,6 +557,210 @@
 
         .empty-state p {
             font-size: 13px;
+        }
+
+        /* ── Letter Modal ───────────────────────────────── */
+        .letter-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .letter-modal.visible {
+            display: flex;
+        }
+
+        .letter-container {
+            background: white;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .letter-header {
+            background: var(--surface);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .letter-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .letter-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .letter-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .letter-btn.print {
+            background: var(--accent);
+            color: white;
+        }
+
+        .letter-btn.print:hover {
+            background: var(--accent-hover);
+        }
+
+        .letter-btn.close {
+            background: var(--surface-2);
+            color: var(--text);
+        }
+
+        .letter-btn.close:hover {
+            background: var(--border);
+        }
+
+        .letter-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px;
+            background: white;
+        }
+
+        /* Letter document styling (for print and display) */
+        .letter-document {
+            max-width: 595px; /* A4 width in pixels at 72 DPI */
+            margin: 0 auto;
+            background: white;
+            color: #000;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.6;
+        }
+
+        .letter-from {
+            margin-bottom: 40px;
+            font-size: 10pt;
+        }
+
+        .letter-from strong {
+            font-size: 11pt;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .letter-date {
+            text-align: right;
+            margin-bottom: 40px;
+            font-size: 10pt;
+            font-style: italic;
+        }
+
+        .letter-to {
+            margin-bottom: 30px;
+        }
+
+        .letter-to-name {
+            font-weight: bold;
+            font-size: 11pt;
+        }
+
+        .letter-to-address {
+            font-size: 10pt;
+            margin-top: 4px;
+        }
+
+        .letter-subject {
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-decoration: underline;
+            font-size: 11pt;
+        }
+
+        .letter-body p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        .letter-signature {
+            margin-top: 40px;
+            font-size: 11pt;
+        }
+
+        .letter-signature p {
+            margin-bottom: 8px;
+        }
+
+        .letter-ps {
+            margin-top: 30px;
+            font-size: 10pt;
+            font-style: italic;
+            color: #444;
+        }
+
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .letter-document, .letter-document * {
+                visibility: visible;
+            }
+
+            .letter-document {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                max-width: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .letter-header,
+            .letter-actions,
+            .letter-btn {
+                display: none !important;
+            }
+        }
+
+        /* Mobile adjustments for letter modal */
+        @media (max-width: 768px) {
+            .letter-content {
+                padding: 20px;
+            }
+
+            .letter-document {
+                font-size: 11pt;
+            }
+
+            .letter-actions {
+                flex-direction: column;
+            }
+
+            .letter-btn {
+                width: 100%;
+                justify-content: center;
+            }
         }
 
         /* ── Map area ───────────────────────────────────── */
@@ -1041,6 +1259,28 @@
     <!-- Error toast -->
     <div class="toast" id="toast"></div>
 
+    <!-- Letter Modal -->
+    <div class="letter-modal" id="letterModal">
+        <div class="letter-container">
+            <div class="letter-header">
+                <h3>📄 Lettre personnalisée</h3>
+                <div class="letter-actions">
+                    <button class="letter-btn print" onclick="printLetter()">
+                        🖨️ Imprimer
+                    </button>
+                    <button class="letter-btn close" onclick="closeLetter()">
+                        Fermer
+                    </button>
+                </div>
+            </div>
+            <div class="letter-content">
+                <div class="letter-document" id="letterDocument">
+                    <!-- Letter content will be generated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const cityInput = document.getElementById('cityInput');
         const cityDropdown = document.getElementById('cityDropdown');
@@ -1151,15 +1391,30 @@
                 const div = document.createElement('div');
                 div.className = 'route-item visited';
 
-                const namesHtml = site.orthos_list && site.orthos_list.length > 0
-                    ? site.orthos_list.map(o => `${o.given_names} ${o.family_name}`.trim()).join(', ')
-                    : `${site.orthos} orthophoniste${site.orthos > 1 ? 's' : ''}`;
+                // Build clickable names for visited sites
+                let namesHtml = '';
+                if (site.orthos_list && site.orthos_list.length > 0) {
+                    const clickableNames = site.orthos_list.map((o, idx) => {
+                        const name = `${o.given_names || ''} ${o.family_name || ''}`.trim();
+                        const orthoDataJson = JSON.stringify({
+                            ...o,
+                            address: site.label || site.address,
+                            organization_address_line: site.address || site.label,
+                            organization_postal_code: site.postal_code,
+                            organization_city: site.city
+                        }).replace(/"/g, '&quot;');
+                        return `<span class="ortho-name-link" onclick='openLetter(${orthoDataJson})' title="Cliquer pour générer la lettre">${name}</span>`;
+                    });
+                    namesHtml = clickableNames.join(', ');
+                } else {
+                    namesHtml = `${site.orthos} orthophoniste${site.orthos > 1 ? 's' : ''}`;
+                }
 
                 div.innerHTML = `
                     <div class="route-num visited">✓</div>
                     <div class="route-detail">
                         <div class="addr">${site.label || site.address || '—'}</div>
-                        <div class="ortho-names">${namesHtml}</div>
+                        <div class="ortho-names" style="overflow: visible;">${namesHtml}</div>
                         <div class="visited-info">✓ Visité le ${site.visitedDate} à ${site.visitedTime}</div>
                     </div>
                     <div class="route-actions">
@@ -1447,27 +1702,32 @@
                             else if (i === n - 1) numClass += ' end';
                         }
 
-                        // Build orthos names list
+                        // Build orthos names list with clickable names
                         let namesHtml = '';
                         let fullNames = '';
                         if (r.orthos_list && r.orthos_list.length > 0) {
-                            const names = r.orthos_list.map(o =>
-                                `${o.given_names} ${o.family_name}`.trim()
-                            );
-                            fullNames = names.join(', ');
+                            // Create clickable name elements
+                            const clickableNames = r.orthos_list.map((o, idx) => {
+                                const name = `${o.given_names || ''} ${o.family_name || ''}`.trim();
+                                const orthoDataJson = JSON.stringify({
+                                    ...o,
+                                    address: r.label,
+                                    organization_address_line: r.address || r.label,
+                                    organization_postal_code: r.postal_code,
+                                    organization_city: r.city
+                                }).replace(/"/g, '&quot;');
+                                return `<span class="ortho-name-link" onclick='openLetter(${orthoDataJson})' title="Cliquer pour générer la lettre">${name}</span>`;
+                            });
+
+                            fullNames = r.orthos_list.map(o => `${o.given_names || ''} ${o.family_name || ''}`.trim()).join(', ');
 
                             // Display first 2 names, then count
-                            if (names.length === 1) {
-                                namesHtml = `👤 ${names[0]}`;
-                            } else if (names.length === 2) {
-                                namesHtml = `👥 ${names[0]}, ${names[1]}`;
+                            if (clickableNames.length === 1) {
+                                namesHtml = `👤 ${clickableNames[0]}`;
+                            } else if (clickableNames.length === 2) {
+                                namesHtml = `👥 ${clickableNames[0]}, ${clickableNames[1]}`;
                             } else {
-                                namesHtml = `👥 ${names[0]}, ${names[1]} (+${names.length - 2})`;
-                            }
-
-                            // Truncate if too long
-                            if (namesHtml.length > 65) {
-                                namesHtml = namesHtml.substring(0, 62) + '...';
+                                namesHtml = `👥 ${clickableNames[0]}, ${clickableNames[1]} <span title="${fullNames}">(+${clickableNames.length - 2})</span>`;
                             }
                         } else {
                             namesHtml = `${r.orthos} orthophoniste${r.orthos > 1 ? 's' : ''}`;
@@ -1479,7 +1739,7 @@
                             <div class="${numClass}">${isVisited ? '✓' : r.order}</div>
                             <div class="route-detail">
                                 <div class="addr" title="${r.label}">${r.label || '—'}</div>
-                                <div class="ortho-names" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${fullNames || namesHtml}">${namesHtml}</div>
+                                <div class="ortho-names" style="overflow: visible;">${namesHtml}</div>
                                 ${visitedBadge}
                             </div>
                             <div class="route-duration">
@@ -1536,27 +1796,32 @@
                     else if (i === n - 1) numClass += ' end';
                 }
 
-                // Build orthos names list
+                // Build orthos names list with clickable names
                 let namesHtml = '';
                 let fullNames = '';
                 if (r.orthos_list && r.orthos_list.length > 0) {
-                    const names = r.orthos_list.map(o =>
-                        `${o.given_names} ${o.family_name}`.trim()
-                    );
-                    fullNames = names.join(', ');
+                    // Create clickable name elements
+                    const clickableNames = r.orthos_list.map((o, idx) => {
+                        const name = `${o.given_names || ''} ${o.family_name || ''}`.trim();
+                        const orthoDataJson = JSON.stringify({
+                            ...o,
+                            address: r.label,
+                            organization_address_line: r.address || r.label,
+                            organization_postal_code: r.postal_code,
+                            organization_city: r.city
+                        }).replace(/"/g, '&quot;');
+                        return `<span class="ortho-name-link" onclick='openLetter(${orthoDataJson})' title="Cliquer pour générer la lettre">${name}</span>`;
+                    });
+
+                    fullNames = r.orthos_list.map(o => `${o.given_names || ''} ${o.family_name || ''}`.trim()).join(', ');
 
                     // Display first 2 names, then count
-                    if (names.length === 1) {
-                        namesHtml = `👤 ${names[0]}`;
-                    } else if (names.length === 2) {
-                        namesHtml = `👥 ${names[0]}, ${names[1]}`;
+                    if (clickableNames.length === 1) {
+                        namesHtml = `👤 ${clickableNames[0]}`;
+                    } else if (clickableNames.length === 2) {
+                        namesHtml = `👥 ${clickableNames[0]}, ${clickableNames[1]}`;
                     } else {
-                        namesHtml = `👥 ${names[0]}, ${names[1]} (+${names.length - 2})`;
-                    }
-
-                    // Truncate if too long
-                    if (namesHtml.length > 65) {
-                        namesHtml = namesHtml.substring(0, 62) + '...';
+                        namesHtml = `👥 ${clickableNames[0]}, ${clickableNames[1]} <span title="${fullNames}">(+${clickableNames.length - 2})</span>`;
                     }
                 } else {
                     namesHtml = `${r.orthos} orthophoniste${r.orthos > 1 ? 's' : ''}`;
@@ -1568,7 +1833,7 @@
                     <div class="${numClass}">${isVisited ? '✓' : r.order}</div>
                     <div class="route-detail">
                         <div class="addr" title="${r.label}">${r.label || '—'}</div>
-                        <div class="ortho-names" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${fullNames || namesHtml}">${namesHtml}</div>
+                        <div class="ortho-names" style="overflow: visible;">${namesHtml}</div>
                         ${visitedBadge}
                     </div>
                     <div class="route-duration">
@@ -1631,6 +1896,154 @@
         // Update on load and resize
         updatePlaceholders();
         window.addEventListener('resize', updatePlaceholders);
+
+        // ── Letter Modal Management ──────────────────────
+        function generateLetterContent(orthoData) {
+            const today = new Date().toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+
+            // Format the recipient name
+            const recipientName = orthoData.given_names && orthoData.family_name
+                ? `${orthoData.given_names} ${orthoData.family_name}`
+                : orthoData.organization_name || 'Madame, Monsieur';
+
+            const civility = orthoData.given_names ?
+                (orthoData.given_names.toLowerCase().includes('mme') || orthoData.given_names.toLowerCase().includes('madame') ? 'Madame' : 'Monsieur')
+                : 'Madame, Monsieur';
+
+            // Format the address
+            const addressLine = orthoData.organization_address_line || orthoData.address || '';
+            const postalCode = orthoData.organization_postal_code || orthoData.postal_code || '';
+            const city = orthoData.organization_city || orthoData.city || '';
+
+            return `
+                <div class="letter-from">
+                    <strong>Nathan KRIEF</strong>
+                    Étudiant entrepreneur<br>
+                    Email : kriefnathan@yahoo.com<br>
+                    Tél : [Votre numéro]
+                </div>
+
+                <div class="letter-date">
+                    ${today}
+                </div>
+
+                <div class="letter-to">
+                    <div class="letter-to-name">${recipientName}</div>
+                    <div class="letter-to-address">
+                        ${addressLine}<br>
+                        ${postalCode} ${city}
+                    </div>
+                </div>
+
+                <div class="letter-subject">
+                    Objet : Demande de retour d'expérience sur un outil d'optimisation de tournées
+                </div>
+
+                <div class="letter-body">
+                    <p>${civility},</p>
+
+                    <p>
+                        Je me permets de vous contacter aujourd'hui dans le cadre d'un projet personnel
+                        qui, je l'espère, pourra s'avérer utile pour votre pratique professionnelle quotidienne.
+                    </p>
+
+                    <p>
+                        En tant qu'étudiant entrepreneur, j'ai développé une solution web permettant d'optimiser
+                        les tournées de visites pour les orthophonistes. Cet outil permet de calculer automatiquement
+                        l'itinéraire le plus efficace pour visiter plusieurs cabinets ou domiciles de patients,
+                        en minimisant le temps de trajet et en maximisant le temps consacré aux soins.
+                    </p>
+
+                    <p>
+                        <strong>Mon objectif n'est absolument pas commercial.</strong> Je souhaite simplement recueillir
+                        vos retours, suggestions et critiques constructives afin d'améliorer cette solution et
+                        de la rendre réellement utile aux professionnels comme vous.
+                    </p>
+
+                    <p>
+                        Voici quelques fonctionnalités actuelles :
+                    </p>
+                    <ul style="margin-left: 20px; margin-bottom: 15px;">
+                        <li>Calcul automatique du meilleur itinéraire entre plusieurs sites</li>
+                        <li>Visualisation interactive sur carte</li>
+                        <li>Système de suivi des visites effectuées</li>
+                        <li>Optimisation du temps de trajet</li>
+                    </ul>
+
+                    <p>
+                        <strong>Votre avis m'intéresse particulièrement :</strong>
+                    </p>
+                    <ul style="margin-left: 20px; margin-bottom: 15px;">
+                        <li>Cette solution répond-elle à un besoin réel dans votre pratique ?</li>
+                        <li>Quelles améliorations souhaiteriez-vous voir ?</li>
+                        <li>Quelles autres fonctionnalités seraient utiles ?</li>
+                    </ul>
+
+                    <p>
+                        Si vous acceptez de m'accorder quelques minutes de votre temps pour échanger
+                        sur ce projet, cela m'aiderait énormément. Un simple email ou un appel téléphonique
+                        suffirait. Vous pouvez également tester directement la solution en ligne.
+                    </p>
+
+                    <p>
+                        Je reste bien entendu à votre entière disposition pour toute question ou démonstration.
+                    </p>
+                </div>
+
+                <div class="letter-signature">
+                    <p>En vous remerciant par avance pour votre attention,</p>
+                    <p>Cordialement,</p>
+                    <br>
+                    <p><strong>Nathan KRIEF</strong></p>
+                </div>
+
+                <div class="letter-ps">
+                    <p>
+                        <strong>P.S. :</strong> Vous pouvez me contacter par email à kriefnathan@yahoo.com
+                        ou tester directement l'application sur [URL de votre app Render].
+                    </p>
+                </div>
+            `;
+        }
+
+        function openLetter(orthoData) {
+            const letterDocument = document.getElementById('letterDocument');
+            const letterModal = document.getElementById('letterModal');
+
+            letterDocument.innerHTML = generateLetterContent(orthoData);
+            letterModal.classList.add('visible');
+
+            // Prevent body scroll when modal is open
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLetter() {
+            const letterModal = document.getElementById('letterModal');
+            letterModal.classList.remove('visible');
+            document.body.style.overflow = '';
+        }
+
+        function printLetter() {
+            window.print();
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('letterModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'letterModal') {
+                closeLetter();
+            }
+        });
+
+        // Close modal with ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeLetter();
+            }
+        });
 
         // ── Init ─────────────────────────────────────────
         loadVisitedSites();
