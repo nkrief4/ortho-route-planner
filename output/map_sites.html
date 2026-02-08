@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_217620e205cc509d580c5d4fc64a51c2 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+    <div style="
+        position:fixed; bottom:30px; left:30px; z-index:1000;
+        background:white; padding:10px 14px; border-radius:8px;
+        box-shadow:0 2px 6px rgba(0,0,0,.3); font-size:13px;
+        font-family:sans-serif; line-height:1.6;">
+        <b>Score géocodage</b><br>
+        <span style="color:#2ecc71;">&#9679;</span> OK (&ge; 0.7)<br>
+        <span style="color:#f39c12;">&#9679;</span> WARNING (0.5 – 0.7)<br>
+        <span style="color:#e74c3c;">&#9679;</span> FAILED (&lt; 0.5)
+    </div>
+    
+    
+            <div class="folium-map" id="map_217620e205cc509d580c5d4fc64a51c2" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_217620e205cc509d580c5d4fc64a51c2 = L.map(
+                "map_217620e205cc509d580c5d4fc64a51c2",
+                {
+                    center: [48.84269742307692, 2.351934346153846],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 12,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_3b85c4d7d30c00fd0787870d87095476 = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_3b85c4d7d30c00fd0787870d87095476.addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+            var circle_marker_f00bb6ffb8b76ef280569a3caa2e5edd = L.circleMarker(
+                [48.839746, 2.358166],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_9706ed36536ca8fc1939c09efd9a0e3f = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_b451ce06fc9982543bbbd4446cfd03c7 = $(`<div id="html_b451ce06fc9982543bbbd4446cfd03c7" style="width: 100.0%; height: 100.0%;"><b>7 Rue de l'Essai 75005 Paris</b><br>Score : 0.9651<br>Orthos : 2<br><small>7 RUE DE L ESSAI 75005 PARIS</small></div>`)[0];
+                popup_9706ed36536ca8fc1939c09efd9a0e3f.setContent(html_b451ce06fc9982543bbbd4446cfd03c7);
+            
+        
+
+        circle_marker_f00bb6ffb8b76ef280569a3caa2e5edd.bindPopup(popup_9706ed36536ca8fc1939c09efd9a0e3f)
+        ;
+
+        
+    
+    
+            circle_marker_f00bb6ffb8b76ef280569a3caa2e5edd.bindTooltip(
+                `<div>
+                     Site 1 – 2 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_217c81a491cad2f29fd571d3cf3020e7 = L.circleMarker(
+                [48.840709, 2.36202],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_f365b4105bd98062374a1b6ea9067f69 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_78fc5edaf9399e7aec7fe8b1b393b0de = $(`<div id="html_78fc5edaf9399e7aec7fe8b1b393b0de" style="width: 100.0%; height: 100.0%;"><b>34 Boulevard de l'Hôpital 75005 Paris</b><br>Score : 0.968<br>Orthos : 1<br><small>34 BOULEVARD DE L HOPITAL 75005 PARIS</small></div>`)[0];
+                popup_f365b4105bd98062374a1b6ea9067f69.setContent(html_78fc5edaf9399e7aec7fe8b1b393b0de);
+            
+        
+
+        circle_marker_217c81a491cad2f29fd571d3cf3020e7.bindPopup(popup_f365b4105bd98062374a1b6ea9067f69)
+        ;
+
+        
+    
+    
+            circle_marker_217c81a491cad2f29fd571d3cf3020e7.bindTooltip(
+                `<div>
+                     Site 2 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_0b9cb6591c5916d3a7d9de116e028fed = L.circleMarker(
+                [48.839135, 2.356049],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_c2353e4cc0237c1b5511bd820daf830f = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_2bfb4c242910be38a0f90e525a3a79eb = $(`<div id="html_2bfb4c242910be38a0f90e525a3a79eb" style="width: 100.0%; height: 100.0%;"><b>6 Rue des Fossés Saint-Marcel 75005 Paris</b><br>Score : 0.9672<br>Orthos : 1<br><small>6 RUE DES FOSSES SAINT-MARCEL 75005 PARIS</small></div>`)[0];
+                popup_c2353e4cc0237c1b5511bd820daf830f.setContent(html_2bfb4c242910be38a0f90e525a3a79eb);
+            
+        
+
+        circle_marker_0b9cb6591c5916d3a7d9de116e028fed.bindPopup(popup_c2353e4cc0237c1b5511bd820daf830f)
+        ;
+
+        
+    
+    
+            circle_marker_0b9cb6591c5916d3a7d9de116e028fed.bindTooltip(
+                `<div>
+                     Site 3 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_2d95d6c0ef28c560ae61dea2f6087a7d = L.circleMarker(
+                [48.841375, 2.357008],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_2d5bbda59636eb956b86013ff41ea25b = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_68c8bb67ebd85d40dec4f1424e5d9a28 = $(`<div id="html_68c8bb67ebd85d40dec4f1424e5d9a28" style="width: 100.0%; height: 100.0%;"><b>67 Rue Buffon 75005 Paris</b><br>Score : 0.9722<br>Orthos : 3<br><small>67 RUE BUFFON 75005 PARIS</small></div>`)[0];
+                popup_2d5bbda59636eb956b86013ff41ea25b.setContent(html_68c8bb67ebd85d40dec4f1424e5d9a28);
+            
+        
+
+        circle_marker_2d95d6c0ef28c560ae61dea2f6087a7d.bindPopup(popup_2d5bbda59636eb956b86013ff41ea25b)
+        ;
+
+        
+    
+    
+            circle_marker_2d95d6c0ef28c560ae61dea2f6087a7d.bindTooltip(
+                `<div>
+                     Site 4 – 3 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_d30721d6dcfec9aab57e600de6aea2e2 = L.circleMarker(
+                [48.844512, 2.341787],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_6d7a2889c3c0a569ff3607b4b477c092 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_91658a40e7cb9043862f7a4a3629df3d = $(`<div id="html_91658a40e7cb9043862f7a4a3629df3d" style="width: 100.0%; height: 100.0%;"><b>32 Rue Gay-Lussac 75005 Paris</b><br>Score : 0.9732<br>Orthos : 1<br><small>32 RUE GAY LUSSAC 75005 PARIS</small></div>`)[0];
+                popup_6d7a2889c3c0a569ff3607b4b477c092.setContent(html_91658a40e7cb9043862f7a4a3629df3d);
+            
+        
+
+        circle_marker_d30721d6dcfec9aab57e600de6aea2e2.bindPopup(popup_6d7a2889c3c0a569ff3607b4b477c092)
+        ;
+
+        
+    
+    
+            circle_marker_d30721d6dcfec9aab57e600de6aea2e2.bindTooltip(
+                `<div>
+                     Site 5 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_7e4c5e02f24c5f8ba8f153fb47c9f84a = L.circleMarker(
+                [48.843034, 2.341289],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_cf10252c084ce3d369177434bad14d4b = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_f48783cace75d5b5008ca5b879775f6f = $(`<div id="html_f48783cace75d5b5008ca5b879775f6f" style="width: 100.0%; height: 100.0%;"><b>254 Rue Saint-Jacques 75005 Paris</b><br>Score : 0.9777<br>Orthos : 8<br><small>254 RUE SAINT JACQUES 75005 PARIS</small></div>`)[0];
+                popup_cf10252c084ce3d369177434bad14d4b.setContent(html_f48783cace75d5b5008ca5b879775f6f);
+            
+        
+
+        circle_marker_7e4c5e02f24c5f8ba8f153fb47c9f84a.bindPopup(popup_cf10252c084ce3d369177434bad14d4b)
+        ;
+
+        
+    
+    
+            circle_marker_7e4c5e02f24c5f8ba8f153fb47c9f84a.bindTooltip(
+                `<div>
+                     Site 6 – 8 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_7e4647abfe636715804d570ac6b6bd99 = L.circleMarker(
+                [48.841267, 2.3541],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_0239b4425bb3f720eb110e481acb62db = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_bf91ee65b8ab2afeeecdf683423885cd = $(`<div id="html_bf91ee65b8ab2afeeecdf683423885cd" style="width: 100.0%; height: 100.0%;"><b>15 Rue Daubenton 75005 Paris</b><br>Score : 0.9717<br>Orthos : 1<br><small>15 RUE DAUBENTON 75005 PARIS</small></div>`)[0];
+                popup_0239b4425bb3f720eb110e481acb62db.setContent(html_bf91ee65b8ab2afeeecdf683423885cd);
+            
+        
+
+        circle_marker_7e4647abfe636715804d570ac6b6bd99.bindPopup(popup_0239b4425bb3f720eb110e481acb62db)
+        ;
+
+        
+    
+    
+            circle_marker_7e4647abfe636715804d570ac6b6bd99.bindTooltip(
+                `<div>
+                     Site 7 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_3320b15e64df18ebdac5575f2e7e20a7 = L.circleMarker(
+                [48.84819, 2.351271],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_5eb2ba65389e12c19a38a303c2d2de23 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_ce6c0d843ee0fdb4091aae1deb43f61f = $(`<div id="html_ce6c0d843ee0fdb4091aae1deb43f61f" style="width: 100.0%; height: 100.0%;"><b>12 Rue Saint-Victor 75005 Paris</b><br>Score : 0.9674<br>Orthos : 1<br><small>12 RUE SAINT VICTOR 75005 PARIS</small></div>`)[0];
+                popup_5eb2ba65389e12c19a38a303c2d2de23.setContent(html_ce6c0d843ee0fdb4091aae1deb43f61f);
+            
+        
+
+        circle_marker_3320b15e64df18ebdac5575f2e7e20a7.bindPopup(popup_5eb2ba65389e12c19a38a303c2d2de23)
+        ;
+
+        
+    
+    
+            circle_marker_3320b15e64df18ebdac5575f2e7e20a7.bindTooltip(
+                `<div>
+                     Site 8 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c492455e752850c363d2163ccda96d95 = L.circleMarker(
+                [48.838399, 2.353778],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_082145768673f42c730dfe35fb7d2423 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_236585f5a22e6e133fdefc111aa5702b = $(`<div id="html_236585f5a22e6e133fdefc111aa5702b" style="width: 100.0%; height: 100.0%;"><b>8 Rue Scipion 75005 Paris</b><br>Score : 0.9661<br>Orthos : 1<br><small>8 RUE SCIPION 75005 PARIS</small></div>`)[0];
+                popup_082145768673f42c730dfe35fb7d2423.setContent(html_236585f5a22e6e133fdefc111aa5702b);
+            
+        
+
+        circle_marker_c492455e752850c363d2163ccda96d95.bindPopup(popup_082145768673f42c730dfe35fb7d2423)
+        ;
+
+        
+    
+    
+            circle_marker_c492455e752850c363d2163ccda96d95.bindTooltip(
+                `<div>
+                     Site 9 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_671e2705e035d92d1b497c89bdc652c3 = L.circleMarker(
+                [48.843023, 2.353133],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_920fd5f2c858e4009cb4bf158d0b70ad = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_0bb5947eea4ce8eb2832dbb234ae6aa5 = $(`<div id="html_0bb5947eea4ce8eb2832dbb234ae6aa5" style="width: 100.0%; height: 100.0%;"><b>20 Rue Larrey 75005 Paris</b><br>Score : 0.9694<br>Orthos : 5<br><small>20 RUE LARREY 75005 PARIS</small></div>`)[0];
+                popup_920fd5f2c858e4009cb4bf158d0b70ad.setContent(html_0bb5947eea4ce8eb2832dbb234ae6aa5);
+            
+        
+
+        circle_marker_671e2705e035d92d1b497c89bdc652c3.bindPopup(popup_920fd5f2c858e4009cb4bf158d0b70ad)
+        ;
+
+        
+    
+    
+            circle_marker_671e2705e035d92d1b497c89bdc652c3.bindTooltip(
+                `<div>
+                     Site 10 – 5 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_334ff79f7dd79a5bcf8f198e9879e616 = L.circleMarker(
+                [48.840393, 2.359839],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_7ec5142bd8fe97c328d5b1af52de0c73 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_bf470ec9d81de9fd3e05453c871e4ec3 = $(`<div id="html_bf470ec9d81de9fd3e05453c871e4ec3" style="width: 100.0%; height: 100.0%;"><b>18 Rue Poliveau 75005 Paris</b><br>Score : 0.9728<br>Orthos : 1<br><small>18 RUE POLIVEAU 75005 PARIS</small></div>`)[0];
+                popup_7ec5142bd8fe97c328d5b1af52de0c73.setContent(html_bf470ec9d81de9fd3e05453c871e4ec3);
+            
+        
+
+        circle_marker_334ff79f7dd79a5bcf8f198e9879e616.bindPopup(popup_7ec5142bd8fe97c328d5b1af52de0c73)
+        ;
+
+        
+    
+    
+            circle_marker_334ff79f7dd79a5bcf8f198e9879e616.bindTooltip(
+                `<div>
+                     Site 11 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_dc21477c4a26a296e49c7706904e46b9 = L.circleMarker(
+                [48.840023, 2.357804],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_95dd5ede2b6c5b6e73d4b5313ddcc855 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_813604f3c9424c42ff7461729e157ec9 = $(`<div id="html_813604f3c9424c42ff7461729e157ec9" style="width: 100.0%; height: 100.0%;"><b>38 Rue Poliveau 75005 Paris</b><br>Score : 0.9728<br>Orthos : 2<br><small>38 RUE POLIVEAU 75005 PARIS</small></div>`)[0];
+                popup_95dd5ede2b6c5b6e73d4b5313ddcc855.setContent(html_813604f3c9424c42ff7461729e157ec9);
+            
+        
+
+        circle_marker_dc21477c4a26a296e49c7706904e46b9.bindPopup(popup_95dd5ede2b6c5b6e73d4b5313ddcc855)
+        ;
+
+        
+    
+    
+            circle_marker_dc21477c4a26a296e49c7706904e46b9.bindTooltip(
+                `<div>
+                     Site 12 – 2 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_dbaa4b30f0682006a4ecc7e32fd6e7b9 = L.circleMarker(
+                [48.848904, 2.343138],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_ffa2aa48d2ae2f5d6db19b48f84b65f6 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_708709b753a2d8192dc582d486964ceb = $(`<div id="html_708709b753a2d8192dc582d486964ceb" style="width: 100.0%; height: 100.0%;"><b>17 Rue de la Sorbonne 75005 Paris</b><br>Score : 0.7072<br>Orthos : 1<br><small>17 RUE DE LA SORBONNE 75230 75005 PARIS 5E ARRONDISSEMENT</small></div>`)[0];
+                popup_ffa2aa48d2ae2f5d6db19b48f84b65f6.setContent(html_708709b753a2d8192dc582d486964ceb);
+            
+        
+
+        circle_marker_dbaa4b30f0682006a4ecc7e32fd6e7b9.bindPopup(popup_ffa2aa48d2ae2f5d6db19b48f84b65f6)
+        ;
+
+        
+    
+    
+            circle_marker_dbaa4b30f0682006a4ecc7e32fd6e7b9.bindTooltip(
+                `<div>
+                     Site 13 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_893062cfdac8388e565b983bf3fe5ab5 = L.circleMarker(
+                [48.839497, 2.346702],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_fc455744e43150ca05a61e88bdbb1480 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_3ae7fac955ad661a7ece226f982520c1 = $(`<div id="html_3ae7fac955ad661a7ece226f982520c1" style="width: 100.0%; height: 100.0%;"><b>39 Rue de l'Arbalète 75005 Paris</b><br>Score : 0.9704<br>Orthos : 1<br><small>39 RUE DE L ARBALETE 75005 PARIS</small></div>`)[0];
+                popup_fc455744e43150ca05a61e88bdbb1480.setContent(html_3ae7fac955ad661a7ece226f982520c1);
+            
+        
+
+        circle_marker_893062cfdac8388e565b983bf3fe5ab5.bindPopup(popup_fc455744e43150ca05a61e88bdbb1480)
+        ;
+
+        
+    
+    
+            circle_marker_893062cfdac8388e565b983bf3fe5ab5.bindTooltip(
+                `<div>
+                     Site 14 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_7d0f0f8f6cf5bcf6290df2c2ce5f3566 = L.circleMarker(
+                [48.844108, 2.348],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_03b52cc014473247097fc03232424986 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_04a73ce5aa657fe8500a7f13cfa3bfe3 = $(`<div id="html_04a73ce5aa657fe8500a7f13cfa3bfe3" style="width: 100.0%; height: 100.0%;"><b>6 Rue Tournefort 75005 Paris</b><br>Score : 0.9703<br>Orthos : 1<br><small>6 RUE TOURNEFORT 75005 PARIS</small></div>`)[0];
+                popup_03b52cc014473247097fc03232424986.setContent(html_04a73ce5aa657fe8500a7f13cfa3bfe3);
+            
+        
+
+        circle_marker_7d0f0f8f6cf5bcf6290df2c2ce5f3566.bindPopup(popup_03b52cc014473247097fc03232424986)
+        ;
+
+        
+    
+    
+            circle_marker_7d0f0f8f6cf5bcf6290df2c2ce5f3566.bindTooltip(
+                `<div>
+                     Site 15 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_9b970d39df8bab007f504a1211e7fe1c = L.circleMarker(
+                [48.84389, 2.347198],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_f1144ec626ccfe2554ef9cef13f9e65c = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_1c5927c6dc0ee2dc76935ebe04eac31d = $(`<div id="html_1c5927c6dc0ee2dc76935ebe04eac31d" style="width: 100.0%; height: 100.0%;"><b>7b Rue Laromiguière 75005 Paris</b><br>Score : 0.7528<br>Orthos : 1<br><small>7 B RUE LAROMIGUIERE 75005 PARIS</small></div>`)[0];
+                popup_f1144ec626ccfe2554ef9cef13f9e65c.setContent(html_1c5927c6dc0ee2dc76935ebe04eac31d);
+            
+        
+
+        circle_marker_9b970d39df8bab007f504a1211e7fe1c.bindPopup(popup_f1144ec626ccfe2554ef9cef13f9e65c)
+        ;
+
+        
+    
+    
+            circle_marker_9b970d39df8bab007f504a1211e7fe1c.bindTooltip(
+                `<div>
+                     Site 16 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_2cca8dbdf49871a316c003a8dbe4e7f4 = L.circleMarker(
+                [48.845732, 2.354955],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_c8a223a09d2bc3f9cc0c80b6f34f5a4d = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_214f7ef1d1fa29f82163983af64ae018 = $(`<div id="html_214f7ef1d1fa29f82163983af64ae018" style="width: 100.0%; height: 100.0%;"><b>5 Place Jussieu 75005 Paris</b><br>Score : 0.9638<br>Orthos : 1<br><small>5 PLACE JUSSIEU 75005 PARIS</small></div>`)[0];
+                popup_c8a223a09d2bc3f9cc0c80b6f34f5a4d.setContent(html_214f7ef1d1fa29f82163983af64ae018);
+            
+        
+
+        circle_marker_2cca8dbdf49871a316c003a8dbe4e7f4.bindPopup(popup_c8a223a09d2bc3f9cc0c80b6f34f5a4d)
+        ;
+
+        
+    
+    
+            circle_marker_2cca8dbdf49871a316c003a8dbe4e7f4.bindTooltip(
+                `<div>
+                     Site 17 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b7039bd4f0895afb496f185ed1263adf = L.circleMarker(
+                [48.840266, 2.348266],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_587c2d9b32d4bc820493d072a22cef58 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_2142d6da8b62e7b2028308431da0cb0b = $(`<div id="html_2142d6da8b62e7b2028308431da0cb0b" style="width: 100.0%; height: 100.0%;"><b>16 Rue de l'Arbalète 75005 Paris</b><br>Score : 0.9704<br>Orthos : 1<br><small>16 RUE DE L ARBALETE 75005 PARIS</small></div>`)[0];
+                popup_587c2d9b32d4bc820493d072a22cef58.setContent(html_2142d6da8b62e7b2028308431da0cb0b);
+            
+        
+
+        circle_marker_b7039bd4f0895afb496f185ed1263adf.bindPopup(popup_587c2d9b32d4bc820493d072a22cef58)
+        ;
+
+        
+    
+    
+            circle_marker_b7039bd4f0895afb496f185ed1263adf.bindTooltip(
+                `<div>
+                     Site 18 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_69a26e106f60a76befef72252a004321 = L.circleMarker(
+                [48.846507, 2.341596],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_cab497ca9ac0369adfe8e1e4f0bb9e09 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_0f00d8c21c0c2c97740efe1300fe4535 = $(`<div id="html_0f00d8c21c0c2c97740efe1300fe4535" style="width: 100.0%; height: 100.0%;"><b>3 Rue Le Goff 75005 Paris</b><br>Score : 0.9651<br>Orthos : 1<br><small>3 RUE LE GOFF 75005 PARIS</small></div>`)[0];
+                popup_cab497ca9ac0369adfe8e1e4f0bb9e09.setContent(html_0f00d8c21c0c2c97740efe1300fe4535);
+            
+        
+
+        circle_marker_69a26e106f60a76befef72252a004321.bindPopup(popup_cab497ca9ac0369adfe8e1e4f0bb9e09)
+        ;
+
+        
+    
+    
+            circle_marker_69a26e106f60a76befef72252a004321.bindTooltip(
+                `<div>
+                     Site 19 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_884ff5321a4a43f31af5cfffed52a90a = L.circleMarker(
+                [48.842393, 2.352247],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_ba05fbf8b79c01f3ea21fc9a8ea3e6ee = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_0c72fffc88c6b1f7065a1a9877aa6d45 = $(`<div id="html_0c72fffc88c6b1f7065a1a9877aa6d45" style="width: 100.0%; height: 100.0%;"><b>81 Rue Monge 75005 Paris</b><br>Score : 0.9758<br>Orthos : 1<br><small>81 RUE MONGE 75005 PARIS</small></div>`)[0];
+                popup_ba05fbf8b79c01f3ea21fc9a8ea3e6ee.setContent(html_0c72fffc88c6b1f7065a1a9877aa6d45);
+            
+        
+
+        circle_marker_884ff5321a4a43f31af5cfffed52a90a.bindPopup(popup_ba05fbf8b79c01f3ea21fc9a8ea3e6ee)
+        ;
+
+        
+    
+    
+            circle_marker_884ff5321a4a43f31af5cfffed52a90a.bindTooltip(
+                `<div>
+                     Site 20 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_ede20e102e75ead8d69b82e3fca084b9 = L.circleMarker(
+                [48.843023, 2.353133],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_43c48369451abeab7f555f10569ca271 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_0af208f6355301904f2edef8b0d27d81 = $(`<div id="html_0af208f6355301904f2edef8b0d27d81" style="width: 100.0%; height: 100.0%;"><b>20 Rue Larrey 75005 Paris</b><br>Score : 0.9694<br>Orthos : 1<br><small>20 RUE LARREY 75005 PARIS 5E ARRONDISSEMENT</small></div>`)[0];
+                popup_43c48369451abeab7f555f10569ca271.setContent(html_0af208f6355301904f2edef8b0d27d81);
+            
+        
+
+        circle_marker_ede20e102e75ead8d69b82e3fca084b9.bindPopup(popup_43c48369451abeab7f555f10569ca271)
+        ;
+
+        
+    
+    
+            circle_marker_ede20e102e75ead8d69b82e3fca084b9.bindTooltip(
+                `<div>
+                     Site 21 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_8071fb7ff4607a20fec0b90b75e1fc35 = L.circleMarker(
+                [48.839259, 2.349481],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_ab545398693e10f2a4a96c5dfff76dd3 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_13bae08fa14eb7664ab6577af5b4a788 = $(`<div id="html_13bae08fa14eb7664ab6577af5b4a788" style="width: 100.0%; height: 100.0%;"><b>4 Rue Edouard Quénu 75005 Paris</b><br>Score : 0.9619<br>Orthos : 1<br><small>4 RUE EDOUARD QUENU 75005 PARIS</small></div>`)[0];
+                popup_ab545398693e10f2a4a96c5dfff76dd3.setContent(html_13bae08fa14eb7664ab6577af5b4a788);
+            
+        
+
+        circle_marker_8071fb7ff4607a20fec0b90b75e1fc35.bindPopup(popup_ab545398693e10f2a4a96c5dfff76dd3)
+        ;
+
+        
+    
+    
+            circle_marker_8071fb7ff4607a20fec0b90b75e1fc35.bindTooltip(
+                `<div>
+                     Site 22 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c29ff2e5491c90858e6038f70692c7de = L.circleMarker(
+                [48.850847, 2.347742],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_5b5b59fa17ab1d2df1fffba30cc5368b = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_f08b776e3ff2e4dcf7ac7dbf4cd824b3 = $(`<div id="html_f08b776e3ff2e4dcf7ac7dbf4cd824b3" style="width: 100.0%; height: 100.0%;"><b>6 Rue des Anglais 75005 Paris</b><br>Score : 0.9651<br>Orthos : 1<br><small>6 RUE DES ANGLAIS 75005 PARIS</small></div>`)[0];
+                popup_5b5b59fa17ab1d2df1fffba30cc5368b.setContent(html_f08b776e3ff2e4dcf7ac7dbf4cd824b3);
+            
+        
+
+        circle_marker_c29ff2e5491c90858e6038f70692c7de.bindPopup(popup_5b5b59fa17ab1d2df1fffba30cc5368b)
+        ;
+
+        
+    
+    
+            circle_marker_c29ff2e5491c90858e6038f70692c7de.bindTooltip(
+                `<div>
+                     Site 23 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_67de73f69488010644bce51fa4e5dbad = L.circleMarker(
+                [48.839746, 2.358166],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_d17aa9be76fd9859ee01f29d1bbf1597 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_b99b0b5febc3590923eedc9b524b3ec1 = $(`<div id="html_b99b0b5febc3590923eedc9b524b3ec1" style="width: 100.0%; height: 100.0%;"><b>7 Rue de l'Essai 75005 Paris</b><br>Score : 0.823<br>Orthos : 1<br><small>07 RUE DE L ESSAI 75005 PARIS</small></div>`)[0];
+                popup_d17aa9be76fd9859ee01f29d1bbf1597.setContent(html_b99b0b5febc3590923eedc9b524b3ec1);
+            
+        
+
+        circle_marker_67de73f69488010644bce51fa4e5dbad.bindPopup(popup_d17aa9be76fd9859ee01f29d1bbf1597)
+        ;
+
+        
+    
+    
+            circle_marker_67de73f69488010644bce51fa4e5dbad.bindTooltip(
+                `<div>
+                     Site 24 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_85febb36b5247df9d54f6b6c26c97959 = L.circleMarker(
+                [48.840252, 2.360244],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_dceca08a385a2c2273584df7e828d4c9 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_d2dadc915abd4aba19aef703d21dafb7 = $(`<div id="html_d2dadc915abd4aba19aef703d21dafb7" style="width: 100.0%; height: 100.0%;"><b>13 Rue Poliveau 75005 Paris</b><br>Score : 0.9728<br>Orthos : 1<br><small>13 RUE POLIVEAU 75005 PARIS</small></div>`)[0];
+                popup_dceca08a385a2c2273584df7e828d4c9.setContent(html_d2dadc915abd4aba19aef703d21dafb7);
+            
+        
+
+        circle_marker_85febb36b5247df9d54f6b6c26c97959.bindPopup(popup_dceca08a385a2c2273584df7e828d4c9)
+        ;
+
+        
+    
+    
+            circle_marker_85febb36b5247df9d54f6b6c26c97959.bindTooltip(
+                `<div>
+                     Site 25 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b10a752cae91f9d23945555508408ea3 = L.circleMarker(
+                [48.845903, 2.353181],
+                {"bubblingMouseEvents": true, "color": "#2ecc71", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2ecc71", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 6, "stroke": true, "weight": 3}
+            ).addTo(map_217620e205cc509d580c5d4fc64a51c2);
+        
+    
+        var popup_7442a2283314971515b28ce2f41c3348 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_680ff055d4caae1c863441c100d0d053 = $(`<div id="html_680ff055d4caae1c863441c100d0d053" style="width: 100.0%; height: 100.0%;"><b>22 Rue des Boulangers 75005 Paris</b><br>Score : 0.9707<br>Orthos : 1<br><small>22 RUE DES BOULANGERS 75005 PARIS</small></div>`)[0];
+                popup_7442a2283314971515b28ce2f41c3348.setContent(html_680ff055d4caae1c863441c100d0d053);
+            
+        
+
+        circle_marker_b10a752cae91f9d23945555508408ea3.bindPopup(popup_7442a2283314971515b28ce2f41c3348)
+        ;
+
+        
+    
+    
+            circle_marker_b10a752cae91f9d23945555508408ea3.bindTooltip(
+                `<div>
+                     Site 26 – 1 orthos
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+</script>
+</html>

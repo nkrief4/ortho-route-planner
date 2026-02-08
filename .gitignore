@@ -15,7 +15,6 @@ data/raw/
 data/enriched/*.csv
 !data/enriched/contacts_orthophonistes_basic.csv
 data/exports/
-output/*
 !output/cache/
 !output/cache/geocode_cache.json
 
