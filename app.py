@@ -67,6 +67,11 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 def init_data(skip_geocode: bool = False) -> None:
     """Charge le CSV enrichi, normalise, crée la table sites, géocode."""
+    # Éviter de charger les données plusieurs fois
+    if _data["ready"]:
+        print("  [info] Données déjà chargées, skip init_data()")
+        return
+
     t0 = time.time()
 
     # ── Vérifier que le CSV enrichi existe ─────────────────────────────
@@ -161,6 +166,12 @@ def _build_city_list(df_sites) -> list[dict]:
 # ═══════════════════════════════════════════════════════════════════════
 
 app = Flask(__name__, template_folder=str(ROOT / "templates"))
+
+# ── Initialiser les données au démarrage (important pour Gunicorn) ───
+# Quand l'app est lancée avec gunicorn, le bloc "if __name__ == '__main__'"
+# n'est pas exécuté, donc on charge les données ici pour garantir qu'elles
+# soient disponibles même avec gunicorn
+init_data(skip_geocode=False)
 
 
 @app.route("/")
