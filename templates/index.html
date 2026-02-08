@@ -94,12 +94,14 @@
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .sidebar-section {
             padding: 16px 20px;
             border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
         }
 
         .sidebar-section h2 {
@@ -326,24 +328,75 @@
 
         /* ── Route list ─────────────────────────────────── */
         .route-list {
-            flex: 1;
-            overflow-y: auto;
             display: none;
+            flex-shrink: 0;
         }
 
         .route-list.visible { display: block; }
 
+        /* Tabs */
+        .route-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            padding: 0 20px;
+            gap: 0;
+        }
+
+        .route-tab {
+            flex: 1;
+            padding: 12px 0;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .route-tab:hover {
+            color: var(--text);
+        }
+
+        .route-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .route-tab-badge {
+            display: inline-block;
+            background: var(--surface-2);
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 6px;
+        }
+
+        .route-tab.active .route-tab-badge {
+            background: var(--accent);
+            color: white;
+        }
+
+        .route-content {
+            display: none;
+        }
+
+        .route-content.active {
+            display: block;
+        }
+
         .route-list-header {
-            position: sticky;
-            top: 0;
-            background: var(--surface);
             padding: 12px 20px 8px;
             font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.8px;
             color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
         }
 
         .route-item {
@@ -352,12 +405,15 @@
             gap: 12px;
             padding: 10px 20px;
             border-bottom: 1px solid var(--border);
-            cursor: pointer;
             transition: background 0.15s;
         }
 
         .route-item:hover {
             background: var(--surface-2);
+        }
+
+        .route-item.visited {
+            opacity: 0.6;
         }
 
         .route-num {
@@ -376,6 +432,7 @@
 
         .route-num.start { background: var(--success); }
         .route-num.end { background: var(--danger); }
+        .route-num.visited { background: var(--text-muted); }
 
         .route-detail {
             flex: 1;
@@ -411,6 +468,81 @@
 
         .route-duration strong {
             color: var(--text);
+        }
+
+        /* ── Route actions (validation buttons) ─────────── */
+        .route-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .route-action-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .route-action-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .route-action-btn.success {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .route-action-btn.success:hover {
+            background: #16a34a;
+            border-color: #16a34a;
+        }
+
+        .route-action-btn.danger {
+            background: var(--surface-2);
+            border-color: var(--border);
+            color: var(--danger);
+        }
+
+        .route-action-btn.danger:hover {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: white;
+        }
+
+        .visited-info {
+            font-size: 10px;
+            color: var(--success);
+            margin-top: 2px;
+            font-weight: 500;
+        }
+
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 13px;
         }
 
         /* ── Map area ───────────────────────────────────── */
@@ -856,10 +988,36 @@
                 </div>
             </div>
 
-            <!-- Route list -->
+            <!-- Route list with tabs -->
             <div class="route-list" id="routeList">
-                <div class="route-list-header">Itinéraire</div>
-                <div id="routeItems"></div>
+                <!-- Tabs -->
+                <div class="route-tabs">
+                    <div class="route-tab active" data-tab="tovisit">
+                        À visiter
+                        <span class="route-tab-badge" id="tovisitCount">0</span>
+                    </div>
+                    <div class="route-tab" data-tab="visited">
+                        Visités
+                        <span class="route-tab-badge" id="visitedCount">0</span>
+                    </div>
+                </div>
+
+                <!-- Content: À visiter -->
+                <div class="route-content active" id="tovisitContent">
+                    <div id="routeItems"></div>
+                </div>
+
+                <!-- Content: Visités -->
+                <div class="route-content" id="visitedContent">
+                    <div id="visitedItems">
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <p>Aucune visite validée pour le moment</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </aside>
 
@@ -903,6 +1061,116 @@
         let selectedCity = null;
         let selectedIndex = -1;
         let startPoint = null;  // {lat, lon, address}
+        let currentRoute = [];  // Current route data
+        let visitedSites = [];  // Visited sites with timestamp
+
+        // ── LocalStorage management ──────────────────────
+        function loadVisitedSites() {
+            try {
+                const stored = localStorage.getItem('ortho_visited_sites');
+                visitedSites = stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                visitedSites = [];
+            }
+        }
+
+        function saveVisitedSites() {
+            try {
+                localStorage.setItem('ortho_visited_sites', JSON.stringify(visitedSites));
+            } catch (e) {
+                console.error('Failed to save visited sites', e);
+            }
+        }
+
+        function markAsVisited(siteData) {
+            const visitData = {
+                ...siteData,
+                visitedAt: new Date().toISOString(),
+                visitedDate: new Date().toLocaleDateString('fr-FR'),
+                visitedTime: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+            };
+            visitedSites.unshift(visitData);
+            saveVisitedSites();
+            updateVisitedList();
+            updateTabCounts();
+        }
+
+        function unmarkAsVisited(siteId) {
+            visitedSites = visitedSites.filter(v => v.site_id !== siteId);
+            saveVisitedSites();
+            updateVisitedList();
+            updateTabCounts();
+        }
+
+        function isSiteVisited(siteId) {
+            return visitedSites.some(v => v.site_id === siteId);
+        }
+
+        // ── Tab management ───────────────────────────────
+        function initTabs() {
+            document.querySelectorAll('.route-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+
+                    // Update active tab
+                    document.querySelectorAll('.route-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    // Update active content
+                    document.querySelectorAll('.route-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(`${tabName}Content`).classList.add('active');
+                });
+            });
+        }
+
+        function updateTabCounts() {
+            const toVisitCount = currentRoute.filter(r => !isSiteVisited(r.site_id)).length;
+            const visitedCount = visitedSites.length;
+
+            document.getElementById('tovisitCount').textContent = toVisitCount;
+            document.getElementById('visitedCount').textContent = visitedCount;
+        }
+
+        function updateVisitedList() {
+            const visitedItems = document.getElementById('visitedItems');
+
+            if (visitedSites.length === 0) {
+                visitedItems.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p>Aucune visite validée pour le moment</p>
+                    </div>
+                `;
+                return;
+            }
+
+            visitedItems.innerHTML = '';
+            visitedSites.forEach((site, i) => {
+                const div = document.createElement('div');
+                div.className = 'route-item visited';
+
+                const namesHtml = site.orthos_list && site.orthos_list.length > 0
+                    ? site.orthos_list.map(o => `${o.given_names} ${o.family_name}`.trim()).join(', ')
+                    : `${site.orthos} orthophoniste${site.orthos > 1 ? 's' : ''}`;
+
+                div.innerHTML = `
+                    <div class="route-num visited">✓</div>
+                    <div class="route-detail">
+                        <div class="addr">${site.label || site.address || '—'}</div>
+                        <div class="ortho-names">${namesHtml}</div>
+                        <div class="visited-info">✓ Visité le ${site.visitedDate} à ${site.visitedTime}</div>
+                    </div>
+                    <div class="route-actions">
+                        <button class="route-action-btn danger" onclick="unmarkAsVisited('${site.site_id}')" title="Annuler la visite">
+                            ✕
+                        </button>
+                    </div>
+                `;
+                visitedItems.appendChild(div);
+            });
+        }
 
         // ── Load cities ──────────────────────────────────
         async function loadCities() {
@@ -1162,16 +1430,22 @@
 
                 // Show route list
                 if (data.route && data.route.length > 0) {
+                    currentRoute = data.route;
                     routeItems.innerHTML = '';
                     const n = data.route.length;
 
                     data.route.forEach((r, i) => {
                         const div = document.createElement('div');
-                        div.className = 'route-item';
+                        const isVisited = isSiteVisited(r.site_id);
+                        div.className = 'route-item' + (isVisited ? ' visited' : '');
 
                         let numClass = 'route-num';
-                        if (i === 0) numClass += ' start';
-                        else if (i === n - 1) numClass += ' end';
+                        if (isVisited) {
+                            numClass += ' visited';
+                        } else {
+                            if (i === 0) numClass += ' start';
+                            else if (i === n - 1) numClass += ' end';
+                        }
 
                         // Build orthos names list
                         let namesHtml = '';
@@ -1199,20 +1473,27 @@
                             namesHtml = `${r.orthos} orthophoniste${r.orthos > 1 ? 's' : ''}`;
                         }
 
+                        const visitedBadge = isVisited ? '<div class="visited-info">✓ Déjà visité</div>' : '';
+
                         div.innerHTML = `
-                            <div class="${numClass}">${r.order}</div>
+                            <div class="${numClass}">${isVisited ? '✓' : r.order}</div>
                             <div class="route-detail">
                                 <div class="addr" title="${r.label}">${r.label || '—'}</div>
                                 <div class="ortho-names" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${fullNames || namesHtml}">${namesHtml}</div>
+                                ${visitedBadge}
                             </div>
                             <div class="route-duration">
                                 ${r.segment_min > 0 ? `+<strong>${r.segment_min}</strong> min` : '<strong>Départ</strong>'}
+                            </div>
+                            <div class="route-actions">
+                                ${!isVisited ? `<button class="route-action-btn success" onclick="validateVisit(${i})" title="Marquer comme visité">✓</button>` : ''}
                             </div>
                         `;
                         routeItems.appendChild(div);
                     });
 
                     routeList.classList.add('visible');
+                    updateTabCounts();
                 }
 
             } catch (e) {
@@ -1221,6 +1502,86 @@
                 loadingOverlay.classList.remove('visible');
                 generateBtn.disabled = false;
             }
+        }
+
+        // ── Validate visit ───────────────────────────────
+        function validateVisit(routeIndex) {
+            if (routeIndex >= 0 && routeIndex < currentRoute.length) {
+                const site = currentRoute[routeIndex];
+                markAsVisited(site);
+                showToast(`✓ Visite validée : ${site.label || site.address}`);
+
+                // Refresh the route display to update the UI
+                refreshRouteDisplay();
+            }
+        }
+
+        function refreshRouteDisplay() {
+            const routeItems = document.getElementById('routeItems');
+            if (currentRoute.length === 0) return;
+
+            routeItems.innerHTML = '';
+            const n = currentRoute.length;
+
+            currentRoute.forEach((r, i) => {
+                const div = document.createElement('div');
+                const isVisited = isSiteVisited(r.site_id);
+                div.className = 'route-item' + (isVisited ? ' visited' : '');
+
+                let numClass = 'route-num';
+                if (isVisited) {
+                    numClass += ' visited';
+                } else {
+                    if (i === 0) numClass += ' start';
+                    else if (i === n - 1) numClass += ' end';
+                }
+
+                // Build orthos names list
+                let namesHtml = '';
+                let fullNames = '';
+                if (r.orthos_list && r.orthos_list.length > 0) {
+                    const names = r.orthos_list.map(o =>
+                        `${o.given_names} ${o.family_name}`.trim()
+                    );
+                    fullNames = names.join(', ');
+
+                    // Display first 2 names, then count
+                    if (names.length === 1) {
+                        namesHtml = `👤 ${names[0]}`;
+                    } else if (names.length === 2) {
+                        namesHtml = `👥 ${names[0]}, ${names[1]}`;
+                    } else {
+                        namesHtml = `👥 ${names[0]}, ${names[1]} (+${names.length - 2})`;
+                    }
+
+                    // Truncate if too long
+                    if (namesHtml.length > 65) {
+                        namesHtml = namesHtml.substring(0, 62) + '...';
+                    }
+                } else {
+                    namesHtml = `${r.orthos} orthophoniste${r.orthos > 1 ? 's' : ''}`;
+                }
+
+                const visitedBadge = isVisited ? '<div class="visited-info">✓ Déjà visité</div>' : '';
+
+                div.innerHTML = `
+                    <div class="${numClass}">${isVisited ? '✓' : r.order}</div>
+                    <div class="route-detail">
+                        <div class="addr" title="${r.label}">${r.label || '—'}</div>
+                        <div class="ortho-names" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${fullNames || namesHtml}">${namesHtml}</div>
+                        ${visitedBadge}
+                    </div>
+                    <div class="route-duration">
+                        ${r.segment_min > 0 ? `+<strong>${r.segment_min}</strong> min` : '<strong>Départ</strong>'}
+                    </div>
+                    <div class="route-actions">
+                        ${!isVisited ? `<button class="route-action-btn success" onclick="validateVisit(${i})" title="Marquer comme visité">✓</button>` : ''}
+                    </div>
+                `;
+                routeItems.appendChild(div);
+            });
+
+            updateTabCounts();
         }
 
         // ── Toast ────────────────────────────────────────
@@ -1272,6 +1633,9 @@
         window.addEventListener('resize', updatePlaceholders);
 
         // ── Init ─────────────────────────────────────────
+        loadVisitedSites();
+        initTabs();
+        updateVisitedList();
         loadCities();
     </script>
 </body>
