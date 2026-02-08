@@ -174,3 +174,4 @@ venv/bin/python run_pipeline.py --phases all --dept 75005 --closed-loop --tsp-li
 | `--tsp-limit` | Temps max du solveur TSP en secondes (defaut: 30) |
 | `--input` | Chemin CSV source (defaut: data/enriched/) |
 | `--output` | Dossier de sortie (defaut: output/) |
+# ortho-route-planner
