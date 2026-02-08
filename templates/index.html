@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ortho Route Planner</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface-2: #242836;
+            --border: #2e3348;
+            --text: #e4e6f0;
+            --text-muted: #8b8fa3;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ── Header ─────────────────────────────────────── */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+
+        header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        header h1 span { color: var(--accent); }
+
+        .header-stats {
+            margin-left: auto;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .menu-toggle {
+            display: none;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .menu-toggle:hover {
+            background: var(--border);
+        }
+
+        .menu-toggle svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* ── Main layout ────────────────────────────────── */
+        .layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ── Sidebar ────────────────────────────────────── */
+        .sidebar {
+            width: 360px;
+            min-width: 360px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-section {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-section h2 {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        /* ── Form controls ──────────────────────────────── */
+        .field { margin-bottom: 12px; }
+
+        .field label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        select, input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, input[type="number"]:focus, input[type="text"]:focus {
+            border-color: var(--accent);
+        }
+
+        /* ── Autocomplete ───────────────────────────────── */
+        .autocomplete {
+            position: relative;
+        }
+
+        .autocomplete-input {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .autocomplete-input:focus {
+            border-color: var(--accent);
+        }
+
+        .autocomplete-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 4px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .autocomplete-dropdown.visible {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-item:hover {
+            background: var(--surface);
+        }
+
+        .autocomplete-item.selected {
+            background: var(--accent);
+            color: white;
+        }
+
+        .autocomplete-item .city-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .autocomplete-item .city-stats {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .autocomplete-item.selected .city-stats {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .autocomplete-empty {
+            padding: 16px 12px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .inline-fields {
+            display: flex;
+            gap: 8px;
+        }
+
+        .inline-fields .field { flex: 1; }
+
+        .checkbox-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .checkbox-field input[type="checkbox"] {
+            accent-color: var(--accent);
+        }
+
+        .checkbox-field label {
+            font-size: 13px;
+            color: var(--text);
+            margin: 0;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ── City info badge ────────────────────────────── */
+        .city-info {
+            display: none;
+            padding: 8px 12px;
+            background: var(--surface-2);
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .city-info.visible { display: block; }
+
+        .city-info .count {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* ── Route results ──────────────────────────────── */
+        .route-stats {
+            display: none;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .route-stats.visible { display: block; }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stat-card {
+            background: var(--surface-2);
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+
+        .stat-card .val {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-card .lbl {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Route list ─────────────────────────────────── */
+        .route-list {
+            flex: 1;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .route-list.visible { display: block; }
+
+        .route-list-header {
+            position: sticky;
+            top: 0;
+            background: var(--surface);
+            padding: 12px 20px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .route-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .route-item:hover {
+            background: var(--surface-2);
+        }
+
+        .route-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .route-num.start { background: var(--success); }
+        .route-num.end { background: var(--danger); }
+
+        .route-detail {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .route-detail .addr {
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .route-detail .meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .route-detail .ortho-names {
+            font-size: 11px;
+            color: var(--accent);
+            margin-top: 3px;
+            font-weight: 500;
+        }
+
+        .route-duration {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .route-duration strong {
+            color: var(--text);
+        }
+
+        /* ── Map area ───────────────────────────────────── */
+        .map-area {
+            flex: 1;
+            position: relative;
+            background: var(--bg);
+            min-height: 400px;
+        }
+
+        .map-area iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .map-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            color: var(--text-muted);
+        }
+
+        .map-placeholder svg {
+            opacity: 0.3;
+        }
+
+        .map-placeholder p {
+            font-size: 14px;
+        }
+
+        /* ── Loading overlay ────────────────────────────── */
+        .loading-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 17, 23, 0.85);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .loading-overlay.visible {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-overlay p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* ── Error toast ────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--danger);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            max-width: 400px;
+            z-index: 200;
+            display: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+
+        .toast.visible { display: block; }
+
+        /* ══════════════════════════════════════════════════ */
+        /*  RESPONSIVE MOBILE                                 */
+        /* ══════════════════════════════════════════════════ */
+
+        @media (max-width: 768px) {
+            /* Header compact */
+            header {
+                padding: 10px 16px;
+                flex-wrap: wrap;
+            }
+
+            header h1 {
+                font-size: 16px;
+            }
+
+            .header-stats {
+                font-size: 11px;
+                width: 100%;
+                margin-left: 0;
+                margin-top: 4px;
+            }
+
+            /* Layout vertical sur mobile */
+            .layout {
+                flex-direction: column;
+            }
+
+            /* Menu toggle visible sur mobile */
+            .menu-toggle {
+                display: flex;
+            }
+
+            /* Sidebar devient une barre en haut (cachée par défaut) */
+            .sidebar {
+                width: 100%;
+                min-width: 100%;
+                max-height: 0;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                overflow: hidden;
+                transition: max-height 0.3s ease;
+            }
+
+            .sidebar.mobile-open {
+                max-height: 60vh;
+                overflow-y: auto;
+            }
+
+            .sidebar-section {
+                padding: 12px 16px;
+            }
+
+            /* Stats plus compacts */
+            .stat-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+
+            .stat-card {
+                padding: 8px 10px;
+            }
+
+            .stat-card .val {
+                font-size: 16px;
+            }
+
+            .stat-card .lbl {
+                font-size: 10px;
+            }
+
+            /* Route list plus compact sur mobile */
+            .route-list {
+                max-height: 25vh;
+                flex-shrink: 0;
+            }
+
+            .route-item {
+                padding: 8px 16px;
+            }
+
+            .route-num {
+                width: 24px;
+                height: 24px;
+                font-size: 10px;
+            }
+
+            .route-detail .addr {
+                font-size: 12px;
+            }
+
+            .route-detail .ortho-names {
+                font-size: 10px;
+            }
+
+            .route-duration {
+                font-size: 11px;
+            }
+
+            /* Map prend le reste de l'espace disponible */
+            .map-area {
+                min-height: calc(100vh - 180px);
+                flex: 1;
+            }
+
+            /* Quand la sidebar est ouverte, la carte reste visible */
+            .sidebar.mobile-open ~ .map-area {
+                min-height: calc(40vh - 60px);
+            }
+
+            /* Boutons plus gros pour le tactile */
+            .btn {
+                padding: 12px 16px;
+                font-size: 15px;
+            }
+
+            /* Inline fields en colonne sur mobile */
+            .inline-fields {
+                flex-direction: column;
+            }
+
+            .inline-fields .field {
+                width: 100%;
+            }
+
+            /* Autocomplete dropdown adapté */
+            .autocomplete-dropdown {
+                max-height: 200px;
+            }
+
+            /* Champs input/select adaptés mobile */
+            select, input[type="text"], input[type="number"] {
+                font-size: 14px;
+                padding: 10px 12px;
+            }
+
+            .field label {
+                font-size: 12px;
+            }
+
+            .field small {
+                font-size: 10px !important;
+            }
+
+            /* Ajuster les placeholders sur mobile */
+            #startAddress::placeholder {
+                font-size: 13px;
+            }
+
+            /* Toast plus petit */
+            .toast {
+                bottom: 16px;
+                right: 16px;
+                left: 16px;
+                max-width: none;
+                font-size: 13px;
+            }
+        }
+
+        /* Tablettes portrait */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .sidebar {
+                width: 320px;
+                min-width: 320px;
+            }
+
+            .sidebar-section {
+                padding: 14px 18px;
+            }
+
+            header h1 {
+                font-size: 17px;
+            }
+
+            .header-stats {
+                font-size: 12px;
+            }
+
+            .map-area {
+                min-height: 500px;
+            }
+        }
+
+        /* Très petits écrans (< 375px) */
+        @media (max-width: 374px) {
+            header {
+                padding: 8px 12px;
+            }
+
+            header h1 {
+                font-size: 14px;
+            }
+
+            .sidebar-section {
+                padding: 10px 12px;
+            }
+
+            .sidebar.mobile-open {
+                max-height: 55vh;
+            }
+
+            .stat-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .btn {
+                font-size: 14px;
+                padding: 10px 14px;
+            }
+
+            /* Champs encore plus compacts sur petits écrans */
+            select, input[type="text"], input[type="number"] {
+                font-size: 13px;
+                padding: 8px 10px;
+            }
+
+            .field label {
+                font-size: 11px;
+            }
+
+            .field small {
+                font-size: 9px !important;
+                line-height: 1.3;
+            }
+
+            #startAddress::placeholder {
+                font-size: 12px;
+            }
+
+            .route-item {
+                padding: 6px 12px;
+                gap: 8px;
+            }
+
+            .route-num {
+                width: 20px;
+                height: 20px;
+                font-size: 9px;
+            }
+
+            .route-detail .addr {
+                font-size: 11px;
+            }
+
+            .route-detail .ortho-names {
+                font-size: 9px;
+            }
+
+            .route-list {
+                max-height: 20vh;
+            }
+
+            .map-area {
+                min-height: calc(100vh - 200px);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <button class="menu-toggle" id="menuToggle" aria-label="Menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12h18M3 6h18M3 18h18"/>
+            </svg>
+        </button>
+        <h1><span>Ortho</span> Route Planner</h1>
+        <div class="header-stats" id="headerStats">Chargement…</div>
+    </header>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h2>Filtre</h2>
+
+                <div class="field">
+                    <label for="cityInput">Ville</label>
+                    <div class="autocomplete">
+                        <input
+                            type="text"
+                            id="cityInput"
+                            class="autocomplete-input"
+                            placeholder="Rechercher une ville..."
+                            autocomplete="off"
+                        >
+                        <div id="cityDropdown" class="autocomplete-dropdown"></div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="deptSelect">Code postal / Arrondissement</label>
+                    <select id="deptSelect">
+                        <option value="">Toute la ville</option>
+                    </select>
+                </div>
+
+                <div class="city-info" id="cityInfo">
+                    <span class="count" id="cityInfoCount">0</span> sites —
+                    <span id="cityInfoOrthos">0</span> orthophonistes
+                </div>
+
+                <!-- NOUVEAU : Point de départ personnalisé -->
+                <div class="field">
+                    <label for="startAddress">📍 Point de départ (optionnel)</label>
+                    <input
+                        type="text"
+                        id="startAddress"
+                        placeholder="Ex: 15 Avenue des Champs-Élysées"
+                        autocomplete="off"
+                    >
+                    <small style="font-size:11px;color:var(--text-muted);margin-top:4px;display:block;">
+                        Entrez uniquement le numéro et le nom de la rue (la ville est déjà sélectionnée)
+                    </small>
+                </div>
+
+                <div class="inline-fields">
+                    <div class="field">
+                        <label for="tspLimit">TSP (sec)</label>
+                        <input type="number" id="tspLimit" value="30" min="5" max="300">
+                    </div>
+                    <div class="field" style="display:flex;align-items:end;">
+                        <div class="checkbox-field">
+                            <input type="checkbox" id="closedLoop">
+                            <label for="closedLoop">Boucle fermée</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="generateBtn" disabled>
+                    Générer l'itinéraire
+                </button>
+            </div>
+
+            <!-- Route stats -->
+            <div class="route-stats" id="routeStats">
+                <h2 style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:10px;">Résultat</h2>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="val" id="statSites">—</div>
+                        <div class="lbl">Sites visités</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="val" id="statDuration">—</div>
+                        <div class="lbl">Durée totale</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="val" id="statAvg">—</div>
+                        <div class="lbl">Moy. / segment</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="val" id="statOrthos">—</div>
+                        <div class="lbl">Orthos total</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Route list -->
+            <div class="route-list" id="routeList">
+                <div class="route-list-header">Itinéraire</div>
+                <div id="routeItems"></div>
+            </div>
+        </aside>
+
+        <!-- Map -->
+        <main class="map-area" id="mapArea">
+            <div class="map-placeholder" id="mapPlaceholder">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <p>Sélectionnez une ville et générez un itinéraire</p>
+            </div>
+
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"></div>
+                <p id="loadingText">Calcul de l'itinéraire en cours…</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Error toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const cityInput = document.getElementById('cityInput');
+        const cityDropdown = document.getElementById('cityDropdown');
+        const deptSelect = document.getElementById('deptSelect');
+        const cityInfo = document.getElementById('cityInfo');
+        const generateBtn = document.getElementById('generateBtn');
+        const mapArea = document.getElementById('mapArea');
+        const mapPlaceholder = document.getElementById('mapPlaceholder');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const routeStats = document.getElementById('routeStats');
+        const routeList = document.getElementById('routeList');
+        const routeItems = document.getElementById('routeItems');
+        const toast = document.getElementById('toast');
+        const headerStats = document.getElementById('headerStats');
+
+        let citiesData = [];
+        let selectedCity = null;
+        let selectedIndex = -1;
+        let startPoint = null;  // {lat, lon, address}
+
+        // ── Load cities ──────────────────────────────────
+        async function loadCities() {
+            try {
+                const resp = await fetch('/api/cities');
+                citiesData = await resp.json();
+
+                const totalOrthos = citiesData.reduce((s, c) => s + c.orthos, 0);
+                const totalSites = citiesData.reduce((s, c) => s + c.sites, 0);
+                headerStats.textContent = `${citiesData.length} villes · ${totalSites} sites · ${totalOrthos} orthophonistes`;
+            } catch (e) {
+                showToast('Erreur de chargement des villes');
+            }
+        }
+
+        // ── Autocomplete filtering ───────────────────────
+        function filterCities(query) {
+            if (!query || query.length < 1) return [];
+
+            query = query.toUpperCase();
+            return citiesData.filter(c =>
+                c.name.toUpperCase().includes(query)
+            ).slice(0, 50); // Limit to 50 results
+        }
+
+        function renderDropdown(filtered) {
+            if (filtered.length === 0) {
+                cityDropdown.innerHTML = '<div class="autocomplete-empty">Aucune ville trouvée</div>';
+                cityDropdown.classList.add('visible');
+                return;
+            }
+
+            cityDropdown.innerHTML = filtered.map((c, i) => `
+                <div class="autocomplete-item ${i === selectedIndex ? 'selected' : ''}" data-index="${i}">
+                    <div class="city-name">${c.name}</div>
+                    <div class="city-stats">${c.orthos} orthophonistes · ${c.sites} sites</div>
+                </div>
+            `).join('');
+
+            cityDropdown.classList.add('visible');
+
+            // Add click handlers
+            cityDropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const idx = parseInt(item.dataset.index);
+                    selectCity(filtered[idx]);
+                });
+            });
+        }
+
+        function selectCity(city) {
+            selectedCity = city;
+            cityInput.value = city.name;
+            cityDropdown.classList.remove('visible');
+            selectedIndex = -1;
+            updateCityInfo(city);
+        }
+
+        function updateCityInfo(city) {
+            deptSelect.innerHTML = '<option value="">Toute la ville</option>';
+            generateBtn.disabled = !city;
+
+            if (city) {
+                cityInfo.classList.add('visible');
+                document.getElementById('cityInfoCount').textContent = city.sites;
+                document.getElementById('cityInfoOrthos').textContent = city.orthos;
+
+                if (city.depts.length > 1) {
+                    city.depts.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value = d;
+                        opt.textContent = d;
+                        deptSelect.appendChild(opt);
+                    });
+                }
+            } else {
+                cityInfo.classList.remove('visible');
+            }
+        }
+
+        // ── Input events ─────────────────────────────────
+        cityInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            selectedIndex = -1;
+
+            if (!query) {
+                cityDropdown.classList.remove('visible');
+                selectedCity = null;
+                updateCityInfo(null);
+                return;
+            }
+
+            const filtered = filterCities(query);
+            renderDropdown(filtered);
+        });
+
+        cityInput.addEventListener('focus', (e) => {
+            const query = e.target.value.trim();
+            if (query) {
+                const filtered = filterCities(query);
+                renderDropdown(filtered);
+            }
+        });
+
+        cityInput.addEventListener('keydown', (e) => {
+            const items = cityDropdown.querySelectorAll('.autocomplete-item');
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                renderDropdown(filterCities(cityInput.value.trim()));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                renderDropdown(filterCities(cityInput.value.trim()));
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    const filtered = filterCities(cityInput.value.trim());
+                    selectCity(filtered[selectedIndex]);
+                } else if (items.length === 1) {
+                    const filtered = filterCities(cityInput.value.trim());
+                    selectCity(filtered[0]);
+                }
+            } else if (e.key === 'Escape') {
+                cityDropdown.classList.remove('visible');
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.autocomplete')) {
+                cityDropdown.classList.remove('visible');
+            }
+        });
+
+        // ── Generate route ───────────────────────────────
+        generateBtn.addEventListener('click', generateRoute);
+
+        async function generateRoute() {
+            if (!selectedCity) {
+                showToast('Veuillez sélectionner une ville');
+                return;
+            }
+
+            const city = selectedCity.name;
+            const dept = deptSelect.value;
+            const tspLimit = parseInt(document.getElementById('tspLimit').value) || 30;
+            const closedLoop = document.getElementById('closedLoop').checked;
+
+            // NOUVEAU : Gérer le point de départ
+            const startAddressInput = document.getElementById('startAddress').value.trim();
+
+            if (!city) return;
+
+            // Show loading
+            generateBtn.disabled = true;
+            loadingOverlay.classList.add('visible');
+            routeStats.classList.remove('visible');
+            routeList.classList.remove('visible');
+
+            try {
+                // NOUVEAU : Géocoder le point de départ si fourni
+                if (startAddressInput) {
+                    loadingText.textContent = 'Géocodage du point de départ...';
+
+                    // Utiliser la ville et le département sélectionnés
+                    const geocodeResp = await fetch('/api/geocode', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            address: startAddressInput,
+                            city: city,
+                            postal_code: dept
+                        }),
+                    });
+
+                    const geocodeData = await geocodeResp.json();
+
+                    if (!geocodeResp.ok) {
+                        showToast(geocodeData.error || 'Impossible de géocoder l\'adresse de départ');
+                        generateBtn.disabled = false;
+                        loadingOverlay.classList.remove('visible');
+                        return;
+                    }
+
+                    startPoint = {
+                        lat: geocodeData.latitude,
+                        lon: geocodeData.longitude,
+                        address: geocodeData.geocoded_label
+                    };
+
+                    loadingText.textContent = `Départ: ${startPoint.address}`;
+                } else {
+                    startPoint = null;
+                }
+
+                loadingText.textContent = 'Calcul de la matrice de distances…';
+
+                const body = {
+                    city: city,
+                    dept: dept,
+                    closed_loop: closedLoop,
+                    tsp_limit: tspLimit,
+                };
+
+                // NOUVEAU : Ajouter point de départ et rayon si définis
+                if (startPoint) {
+                    body.start_lat = startPoint.lat;
+                    body.start_lon = startPoint.lon;
+                    body.start_address = startPoint.address;
+                }
+
+                const resp = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body),
+                });
+
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    showToast(data.error || 'Erreur serveur');
+                    return;
+                }
+
+                // Show map
+                mapPlaceholder.style.display = 'none';
+                const existingIframe = mapArea.querySelector('iframe');
+                if (existingIframe) existingIframe.remove();
+
+                const iframe = document.createElement('iframe');
+                iframe.srcdoc = data.map_html;
+                mapArea.appendChild(iframe);
+
+                // Show stats
+                if (data.stats) {
+                    const s = data.stats;
+                    if (s.visited_sites) {
+                        document.getElementById('statSites').textContent = s.visited_sites;
+                        document.getElementById('statDuration').textContent =
+                            s.total_duration_h >= 1
+                                ? `${s.total_duration_h}h`
+                                : `${s.total_duration_min} min`;
+                        document.getElementById('statAvg').textContent = `${s.avg_segment_min} min`;
+
+                        const totalOrthos = data.route.reduce((sum, r) => sum + r.orthos, 0);
+                        document.getElementById('statOrthos').textContent = totalOrthos;
+
+                        routeStats.classList.add('visible');
+                    }
+
+                    if (s.message) {
+                        showToast(s.message);
+                    }
+                }
+
+                // Show route list
+                if (data.route && data.route.length > 0) {
+                    routeItems.innerHTML = '';
+                    const n = data.route.length;
+
+                    data.route.forEach((r, i) => {
+                        const div = document.createElement('div');
+                        div.className = 'route-item';
+
+                        let numClass = 'route-num';
+                        if (i === 0) numClass += ' start';
+                        else if (i === n - 1) numClass += ' end';
+
+                        // Build orthos names list
+                        let namesHtml = '';
+                        let fullNames = '';
+                        if (r.orthos_list && r.orthos_list.length > 0) {
+                            const names = r.orthos_list.map(o =>
+                                `${o.given_names} ${o.family_name}`.trim()
+                            );
+                            fullNames = names.join(', ');
+
+                            // Display first 2 names, then count
+                            if (names.length === 1) {
+                                namesHtml = `👤 ${names[0]}`;
+                            } else if (names.length === 2) {
+                                namesHtml = `👥 ${names[0]}, ${names[1]}`;
+                            } else {
+                                namesHtml = `👥 ${names[0]}, ${names[1]} (+${names.length - 2})`;
+                            }
+
+                            // Truncate if too long
+                            if (namesHtml.length > 65) {
+                                namesHtml = namesHtml.substring(0, 62) + '...';
+                            }
+                        } else {
+                            namesHtml = `${r.orthos} orthophoniste${r.orthos > 1 ? 's' : ''}`;
+                        }
+
+                        div.innerHTML = `
+                            <div class="${numClass}">${r.order}</div>
+                            <div class="route-detail">
+                                <div class="addr" title="${r.label}">${r.label || '—'}</div>
+                                <div class="ortho-names" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${fullNames || namesHtml}">${namesHtml}</div>
+                            </div>
+                            <div class="route-duration">
+                                ${r.segment_min > 0 ? `+<strong>${r.segment_min}</strong> min` : '<strong>Départ</strong>'}
+                            </div>
+                        `;
+                        routeItems.appendChild(div);
+                    });
+
+                    routeList.classList.add('visible');
+                }
+
+            } catch (e) {
+                showToast('Erreur réseau : ' + e.message);
+            } finally {
+                loadingOverlay.classList.remove('visible');
+                generateBtn.disabled = false;
+            }
+        }
+
+        // ── Toast ────────────────────────────────────────
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('visible');
+            setTimeout(() => toast.classList.remove('visible'), 5000);
+        }
+
+        // ── Mobile menu toggle ──────────────────────────
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.querySelector('.sidebar');
+
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('mobile-open');
+            });
+
+            // Close menu when generating route on mobile
+            generateBtn.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('mobile-open');
+                }
+            });
+        }
+
+        // ── Responsive placeholders ──────────────────────
+        function updatePlaceholders() {
+            const startAddressInput = document.getElementById('startAddress');
+            const width = window.innerWidth;
+
+            if (width <= 374) {
+                // Très petit mobile
+                startAddressInput.placeholder = "Ex: 15 Ave Champs-Élysées";
+                cityInput.placeholder = "Ville...";
+            } else if (width <= 768) {
+                // Mobile
+                startAddressInput.placeholder = "Ex: 15 Avenue des Champs-Élysées";
+                cityInput.placeholder = "Rechercher une ville...";
+            } else {
+                // Desktop
+                startAddressInput.placeholder = "Ex: 15 Avenue des Champs-Élysées";
+                cityInput.placeholder = "Rechercher une ville...";
+            }
+        }
+
+        // Update on load and resize
+        updatePlaceholders();
+        window.addEventListener('resize', updatePlaceholders);
+
+        // ── Init ─────────────────────────────────────────
+        loadCities();
+    </script>
+</body>
+</html>

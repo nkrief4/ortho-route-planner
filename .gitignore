@@ -1,0 +1,31 @@
+# ── Python ───────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# ── Environnement ────────────────────────────
+venv/
+.env
+
+# ── Données & outputs (trop lourds pour git) ─
+data/raw/
+data/enriched/*.csv
+!data/enriched/contacts_orthophonistes_basic.csv
+data/exports/
+output/*
+!output/cache/
+!output/cache/geocode_cache.json
+
+# ── OS / IDE ─────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# ── Fichiers temporaires Excel ───────────────
+~$*
