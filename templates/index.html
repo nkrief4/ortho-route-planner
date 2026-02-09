@@ -1974,11 +1974,18 @@
             // Format the recipient name
             const recipientName = orthoData.given_names && orthoData.family_name
                 ? `${orthoData.given_names} ${orthoData.family_name}`
-                : orthoData.organization_name || 'Madame, Monsieur';
+                : orthoData.organization_name || '';
 
-            const civility = orthoData.given_names ?
-                (orthoData.given_names.toLowerCase().includes('mme') || orthoData.given_names.toLowerCase().includes('madame') ? 'Madame' : 'Monsieur')
-                : 'Madame, Monsieur';
+            // Civilité : utiliser celle du backend (gender-guesser), sinon fallback
+            const civility = orthoData.civility || 'Madame, Monsieur';
+
+            // Salutation avec nom : "Madame Dupont" ou "Monsieur Martin" ou "Madame, Monsieur"
+            const salutation = orthoData.family_name && civility !== 'Madame, Monsieur'
+                ? `${civility} ${orthoData.family_name}`
+                : `${civility}`;
+
+            // "curieux" ou "curieuse" selon la civilité
+            const curieux = civility === 'Madame' ? 'curieuse' : civility === 'Monsieur' ? 'curieux' : 'curieux(se)';
 
             // Format the address
             const addressLine = orthoData.organization_address_line || orthoData.address || '';
@@ -1986,17 +1993,6 @@
             const city = orthoData.organization_city || orthoData.city || '';
 
             return `
-                <div class="letter-from">
-                    <strong>Nathan KRIEF</strong>
-                    Étudiant entrepreneur<br>
-                    Email : kriefnathan@yahoo.com<br>
-                    Tél : [Votre numéro]
-                </div>
-
-                <div class="letter-date">
-                    ${today}
-                </div>
-
                 <div class="letter-to">
                     <div class="letter-to-name">${recipientName}</div>
                     <div class="letter-to-address">
@@ -2005,72 +2001,80 @@
                     </div>
                 </div>
 
+                <div class="letter-date">
+                    Paris, le ${today}
+                </div>
+
                 <div class="letter-subject">
-                    Objet : Demande de retour d'expérience sur un outil d'optimisation de tournées
+                    Objet : Recherche de collaboration — plateforme pour orthophonistes
                 </div>
 
                 <div class="letter-body">
-                    <p>${civility},</p>
+                    <p>${salutation},</p>
 
                     <p>
-                        Je me permets de vous contacter aujourd'hui dans le cadre d'un projet personnel
-                        qui, je l'espère, pourra s'avérer utile pour votre pratique professionnelle quotidienne.
+                        Je m'appelle Nathan Krief, j'ai 22 ans et je suis étudiant-entrepreneur.
+                        Je développe <strong>Logesia</strong>, une plateforme numérique pensée pour
+                        simplifier le quotidien des orthophonistes.
                     </p>
 
-                    <p>
-                        En tant qu'étudiant entrepreneur, j'ai développé une solution web permettant d'optimiser
-                        les tournées de visites pour les orthophonistes. Cet outil permet de calculer automatiquement
-                        l'itinéraire le plus efficace pour visiter plusieurs cabinets ou domiciles de patients,
-                        en minimisant le temps de trajet et en maximisant le temps consacré aux soins.
-                    </p>
+                    <p><strong>Pourquoi je vous écris personnellement ?</strong></p>
 
                     <p>
-                        <strong>Mon objectif n'est absolument pas commercial.</strong> Je souhaite simplement recueillir
-                        vos retours, suggestions et critiques constructives afin d'améliorer cette solution et
-                        de la rendre réellement utile aux professionnels comme vous.
+                        Plus jeune, j'ai moi-même été suivi en orthophonie. Ma meilleure amie est
+                        orthophoniste. En échangeant avec elle, j'ai réalisé à quel point le métier
+                        est envahi par des tâches administratives qui empiètent sur le temps clinique.
+                        J'ai voulu créer un outil qui change cela.
                     </p>
 
-                    <p>
-                        Voici quelques fonctionnalités actuelles :
-                    </p>
+                    <p><strong>Logesia permet concrètement de :</strong></p>
                     <ul style="margin-left: 20px; margin-bottom: 15px;">
-                        <li>Calcul automatique du meilleur itinéraire entre plusieurs sites</li>
-                        <li>Visualisation interactive sur carte</li>
-                        <li>Système de suivi des visites effectuées</li>
-                        <li>Optimisation du temps de trajet</li>
+                        <li>gagner du temps sur les comptes rendus et la documentation clinique ;</li>
+                        <li>générer des exercices personnalisés, adaptés à chaque patient et à ses progrès ;</li>
+                        <li>structurer le suivi thérapeutique avec une trame adaptative, séance après séance.</li>
                     </ul>
 
                     <p>
-                        <strong>Votre avis m'intéresse particulièrement :</strong>
-                    </p>
-                    <ul style="margin-left: 20px; margin-bottom: 15px;">
-                        <li>Cette solution répond-elle à un besoin réel dans votre pratique ?</li>
-                        <li>Quelles améliorations souhaiteriez-vous voir ?</li>
-                        <li>Quelles autres fonctionnalités seraient utiles ?</li>
-                    </ul>
-
-                    <p>
-                        Si vous acceptez de m'accorder quelques minutes de votre temps pour échanger
-                        sur ce projet, cela m'aiderait énormément. Un simple email ou un appel téléphonique
-                        suffirait. Vous pouvez également tester directement la solution en ligne.
+                        Le tout est assisté par intelligence artificielle, mais toujours sous votre
+                        contrôle : c'est vous le professionnel, l'outil vous assiste. Et ce n'est
+                        qu'un début : de nombreuses fonctionnalités sont en cours de développement
+                        pour aller encore plus loin.
                     </p>
 
+                    <p><strong>Ce que je recherche, ce n'est pas un client, mais un regard d'expert.</strong></p>
+
                     <p>
-                        Je reste bien entendu à votre entière disposition pour toute question ou démonstration.
+                        La plateforme existe et fonctionne, mais j'ai besoin de professionnels de
+                        terrain pour me dire ce qui manque, ce qui ne va pas et ce qu'il faut améliorer.
+                        Concrètement, je cherche des orthophonistes prêts à tester Logesia et à me
+                        faire leurs retours, même sévères.
+                    </p>
+
+                    <p>
+                        En échange, je vous offre un <strong>accès gratuit pendant 1 an</strong> à
+                        l'ensemble de la plateforme.
+                    </p>
+
+                    <p>
+                        Si vous êtes ${curieux}, scannez le QR code ci-dessous pour découvrir Logesia,
+                        ou contactez-moi directement :
+                    </p>
+
+                    <p style="text-align: center; margin: 20px 0; color: #666; font-style: italic;">
+                        [QR CODE vers logesia.com]
                     </p>
                 </div>
 
                 <div class="letter-signature">
-                    <p>En vous remerciant par avance pour votre attention,</p>
-                    <p>Cordialement,</p>
-                    <br>
-                    <p><strong>Nathan KRIEF</strong></p>
+                    <p><strong>Nathan Krief</strong></p>
+                    <p>06 29 40 04 23</p>
+                    <p>nathan@logesia.com</p>
                 </div>
 
                 <div class="letter-ps">
                     <p>
-                        <strong>P.S. :</strong> Vous pouvez me contacter par email à kriefnathan@yahoo.com
-                        ou tester directement l'application sur [URL de votre app Render].
+                        <strong>P.S. :</strong> Je serais également ravi de vous rencontrer autour
+                        d'un café pour vous présenter la plateforme en personne : 30 minutes suffisent.
                     </p>
                 </div>
             `;

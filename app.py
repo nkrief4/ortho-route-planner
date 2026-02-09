@@ -12,10 +12,41 @@ import argparse
 import math
 import sys
 import time
+import unicodedata
 from pathlib import Path
 
+import gender_guesser.detector as gender_detector
 import pandas as pd
 from flask import Flask, jsonify, render_template, request
+
+# ── Détecteur de genre (chargé une seule fois) ──────────────────────
+_gender_d = gender_detector.Detector()
+
+
+def guess_civility(given_names: str) -> str:
+    """Devine 'Madame' ou 'Monsieur' à partir du prénom français."""
+    if not given_names or given_names in ("nan", ""):
+        return ""
+
+    first = given_names.strip().split("-")[0].split(" ")[0].title()
+
+    result = _gender_d.get_gender(first, "france")
+    if result in ("unknown", "andy"):
+        result = _gender_d.get_gender(first)
+    if result in ("unknown", "andy"):
+        stripped = "".join(
+            c for c in unicodedata.normalize("NFD", first)
+            if unicodedata.category(c) != "Mn"
+        )
+        result = _gender_d.get_gender(stripped, "france")
+        if result in ("unknown", "andy"):
+            result = _gender_d.get_gender(stripped)
+
+    if result in ("female", "mostly_female"):
+        return "Madame"
+    elif result in ("male", "mostly_male"):
+        return "Monsieur"
+    return ""
 
 # ── Chemin racine ─────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent
@@ -412,9 +443,11 @@ def api_generate():
         orthos_at_site = df_orthos[df_orthos["site_id"] == site_id]
         orthos_list = []
         for _, ortho in orthos_at_site.iterrows():
+            given = str(ortho.get("given_names", ""))
             orthos_list.append({
                 "family_name": str(ortho.get("family_name", "")),
-                "given_names": str(ortho.get("given_names", "")),
+                "given_names": given,
+                "civility": guess_civility(given),
                 "email": str(ortho.get("organization_email", "") or ortho.get("role_email", "")),
                 "phone": str(ortho.get("organization_phone", "") or ortho.get("role_phone", "")),
             })
