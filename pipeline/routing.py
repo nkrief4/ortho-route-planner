@@ -26,8 +26,13 @@ from ortools.constraint_solver import pywrapcp, routing_enums_pb2
 from .config import OUTPUT_DIR
 
 # ── Constantes OSRM ─────────────────────────────────────────────────
-OSRM_TABLE_URL = "https://router.project-osrm.org/table/v1/driving"
-OSRM_ROUTE_URL = "https://router.project-osrm.org/route/v1/driving"
+# Le serveur public project-osrm.org ne supporte que driving.
+# routing.openstreetmap.de fournit des instances par profil (routed-car, routed-foot).
+OSRM_SERVERS = {
+    "driving": "https://routing.openstreetmap.de/routed-car",
+    "foot":    "https://routing.openstreetmap.de/routed-foot",
+}
+DEFAULT_PROFILE = "driving"
 OSRM_BATCH = 50          # coordonnées par bloc
 OSRM_SLEEP = 1.0         # secondes entre requêtes (serveur public)
 OSRM_TIMEOUT = 60
@@ -43,13 +48,16 @@ def _osrm_table(
     coords: list[tuple[float, float]],
     sources: list[int] | None = None,
     destinations: list[int] | None = None,
+    profile: str = DEFAULT_PROFILE,
 ) -> dict:
     """
     Appel bas-niveau à l'OSRM Table API.
     coords : liste de (lat, lon) — convertis en lon,lat pour OSRM.
+    profile : "driving" ou "foot".
     """
+    base = OSRM_SERVERS.get(profile, OSRM_SERVERS["driving"])
     coords_str = ";".join(f"{lon},{lat}" for lat, lon in coords)
-    url = f"{OSRM_TABLE_URL}/{coords_str}"
+    url = f"{base}/table/v1/{profile}/{coords_str}"
 
     params: dict[str, str] = {"annotations": "duration"}
     if sources is not None:
@@ -79,6 +87,7 @@ def _osrm_table(
 
 def compute_duration_matrix(
     coords: list[tuple[float, float]],
+    profile: str = DEFAULT_PROFILE,
 ) -> np.ndarray:
     """
     Calcule la matrice NxN de durées de trajet (secondes) via OSRM Table.
@@ -119,7 +128,7 @@ def compute_duration_matrix(
                 dst_idx = list(range(ns, ns + len(dst_coords)))
 
             try:
-                data = _osrm_table(combined, src_idx, dst_idx)
+                data = _osrm_table(combined, src_idx, dst_idx, profile=profile)
                 durations = data.get("durations", [])
                 for r, row_vals in enumerate(durations):
                     for c, val in enumerate(row_vals):
@@ -245,6 +254,7 @@ def fetch_route_geometry(
     coords: list[tuple[float, float]],
     route_order: list[int],
     waypoints_per_call: int = 80,
+    profile: str = DEFAULT_PROFILE,
 ) -> list[list[list[float]]]:
     """
     Récupère la géométrie routière exacte via l'API OSRM Route.
@@ -260,8 +270,9 @@ def fetch_route_geometry(
         if len(batch) < 2:
             break
 
+        base = OSRM_SERVERS.get(profile, OSRM_SERVERS["driving"])
         coords_str = ";".join(f"{lon},{lat}" for lat, lon in batch)
-        url = f"{OSRM_ROUTE_URL}/{coords_str}?overview=full&geometries=geojson"
+        url = f"{base}/route/v1/{profile}/{coords_str}?overview=full&geometries=geojson"
 
         try:
             req = Request(url, headers={"User-Agent": "ortho-pipeline/1.0"})

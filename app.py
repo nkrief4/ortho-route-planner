@@ -279,6 +279,9 @@ def api_generate():
     dept_filter = (body.get("dept") or "").strip()
     closed_loop = body.get("closed_loop", False)
     tsp_limit = int(body.get("tsp_limit", 30))
+    transport_mode = body.get("transport_mode", "driving")
+    if transport_mode not in ("driving", "foot"):
+        transport_mode = "driving"
 
     # NOUVEAU : Point de départ personnalisé
     start_lat = body.get("start_lat")
@@ -373,8 +376,8 @@ def api_generate():
 
             print(f"  [route] Point de départ ajouté : {start_address}")
 
-    print(f"  [route] Calcul matrice OSRM pour {len(coords)} points…")
-    matrix = compute_duration_matrix(coords)
+    print(f"  [route] Calcul matrice OSRM pour {len(coords)} points (mode={transport_mode})…")
+    matrix = compute_duration_matrix(coords, profile=transport_mode)
 
     # ── Phase 7 : TSP ─────────────────────────────────────────────────
     open_path = not closed_loop
@@ -420,8 +423,8 @@ def api_generate():
     # ── Phase 8 : Géométrie + carte ───────────────────────────────────
     route_geom = None
     if len(route_order) <= 300:
-        print("  [route] Récupération géométrie routière OSRM…")
-        route_geom = fetch_route_geometry(coords, route_order)
+        print(f"  [route] Récupération géométrie OSRM (mode={transport_mode})…")
+        route_geom = fetch_route_geometry(coords, route_order, profile=transport_mode)
 
     # Enrichir df_routable avec les noms avant de créer la carte
     df_routable_enriched = df_routable.copy()
@@ -461,6 +464,7 @@ def api_generate():
             "total_duration_h": round(total_h, 2),
             "avg_segment_min": round(total_min / max(len(route_order) - 1, 1), 1),
             "closed_loop": closed_loop,
+            "transport_mode": transport_mode,
         },
     })
 

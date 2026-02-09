@@ -250,6 +250,40 @@
             margin: 0;
         }
 
+        /* ── Transport toggle ───────────────────────────── */
+        .transport-toggle {
+            display: flex;
+            gap: 8px;
+        }
+
+        .transport-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .transport-btn:hover {
+            border-color: var(--accent);
+            color: var(--text);
+        }
+
+        .transport-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
         .btn {
             width: 100%;
             padding: 10px 16px;
@@ -1165,6 +1199,26 @@
                     </small>
                 </div>
 
+                <!-- Mode de transport -->
+                <div class="field">
+                    <label>Mode de transport</label>
+                    <div class="transport-toggle">
+                        <button type="button" class="transport-btn active" data-mode="driving" id="btnDriving">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 17h14M5 17a2 2 0 01-2-2V9a2 2 0 012-2h1l2-3h8l2 3h1a2 2 0 012 2v6a2 2 0 01-2 2M5 17a2 2 0 00-2 2v1h4v-1a2 2 0 00-2-2zm14 0a2 2 0 00-2 2v1h4v-1a2 2 0 00-2-2z"/>
+                            </svg>
+                            Voiture
+                        </button>
+                        <button type="button" class="transport-btn" data-mode="foot" id="btnFoot">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="13" cy="4" r="2"/>
+                                <path d="M7 21l3-4m0 0l2-2m-2 2l-2-4 4-3 2 1 3-2m-7 4l-1 5"/>
+                            </svg>
+                            A pied
+                        </button>
+                    </div>
+                </div>
+
                 <div class="inline-fields">
                     <div class="field">
                         <label for="tspLimit">TSP (sec)</label>
@@ -1303,6 +1357,7 @@
         let startPoint = null;  // {lat, lon, address}
         let currentRoute = [];  // Current route data
         let visitedSites = [];  // Visited sites with timestamp
+        let transportMode = 'driving';  // 'driving' or 'foot'
 
         // ── LocalStorage management ──────────────────────
         function loadVisitedSites() {
@@ -1623,13 +1678,15 @@
                     startPoint = null;
                 }
 
-                loadingText.textContent = 'Calcul de la matrice de distances…';
+                const modeLabel = transportMode === 'foot' ? 'a pied' : 'en voiture';
+                loadingText.textContent = `Calcul de l'itinéraire ${modeLabel}…`;
 
                 const body = {
                     city: city,
                     dept: dept,
                     closed_loop: closedLoop,
                     tsp_limit: tspLimit,
+                    transport_mode: transportMode,
                 };
 
                 // NOUVEAU : Ajouter point de départ et rayon si définis
@@ -1855,6 +1912,15 @@
             toast.classList.add('visible');
             setTimeout(() => toast.classList.remove('visible'), 5000);
         }
+
+        // ── Transport mode toggle ────────────────────────
+        document.querySelectorAll('.transport-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.transport-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                transportMode = btn.dataset.mode;
+            });
+        });
 
         // ── Mobile menu toggle ──────────────────────────
         const menuToggle = document.getElementById('menuToggle');
