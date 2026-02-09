@@ -17,7 +17,7 @@ from pathlib import Path
 
 import gender_guesser.detector as gender_detector
 import pandas as pd
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_from_directory
 
 # ── Détecteur de genre (chargé une seule fois) ──────────────────────
 _gender_d = gender_detector.Detector()
@@ -208,6 +208,12 @@ init_data(skip_geocode=False)
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/qr-code.svg")
+def qr_code():
+    """Expose le QR code utilisé dans la lettre."""
+    return send_from_directory(ROOT, "qr-code.svg", mimetype="image/svg+xml")
 
 
 @app.route("/api/cities")
@@ -472,15 +478,18 @@ def api_generate():
     route_list = []
     for _, r in df_route.iterrows():
         site_id = r.get("site_id")
+        lat = float(r.get("latitude", 0))
+        lon = float(r.get("longitude", 0))
         route_list.append({
             "order": int(r["visit_order"]),
+            "site_id": f"{lat:.5f},{lon:.5f}",
             "label": str(r.get("geocoded_label", "")),
             "orthos": int(r.get("nb_orthos", 0)),
             "orthos_list": orthos_by_site.get(site_id, []),
             "segment_min": float(r.get("segment_min", 0)),
             "cumul_min": float(r.get("cumul_min", 0)),
-            "lat": float(r.get("latitude", 0)),
-            "lon": float(r.get("longitude", 0)),
+            "lat": lat,
+            "lon": lon,
         })
 
     total_min = total_duration / 60

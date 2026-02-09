@@ -750,6 +750,35 @@
             color: #444;
         }
 
+        .letter-qr-section {
+            margin: 20px 0 8px;
+            padding: 16px;
+            border: 1px solid #d9dde7;
+            border-radius: 10px;
+            background: #f8f9fc;
+            text-align: center;
+        }
+
+        .letter-qr-label {
+            font-size: 10.5pt;
+            margin-bottom: 10px;
+            color: #1f2937;
+        }
+
+        .letter-qr-image {
+            width: 128px;
+            height: 128px;
+            display: block;
+            margin: 0 auto 8px;
+        }
+
+        .letter-qr-link {
+            font-size: 10pt;
+            color: #334155;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
         /* Print styles */
         @media print {
             body * {
@@ -770,6 +799,10 @@
                 margin: 0;
             }
 
+            .letter-qr-section {
+                background: #fff;
+            }
+
             .letter-header,
             .letter-actions,
             .letter-btn {
@@ -785,6 +818,11 @@
 
             .letter-document {
                 font-size: 11pt;
+            }
+
+            .letter-qr-image {
+                width: 110px;
+                height: 110px;
             }
 
             .letter-actions {
@@ -1362,8 +1400,10 @@
         // ── LocalStorage management ──────────────────────
         function loadVisitedSites() {
             try {
-                const stored = localStorage.getItem('ortho_visited_sites');
+                const stored = localStorage.getItem('ortho_visited_sites_v2');
                 visitedSites = stored ? JSON.parse(stored) : [];
+                // Migration : supprimer l'ancien format (clés sans site_id fiable)
+                localStorage.removeItem('ortho_visited_sites');
             } catch (e) {
                 visitedSites = [];
             }
@@ -1371,15 +1411,23 @@
 
         function saveVisitedSites() {
             try {
-                localStorage.setItem('ortho_visited_sites', JSON.stringify(visitedSites));
+                localStorage.setItem('ortho_visited_sites_v2', JSON.stringify(visitedSites));
             } catch (e) {
                 console.error('Failed to save visited sites', e);
             }
         }
 
         function markAsVisited(siteData) {
+            // Ne pas ajouter si déjà visité (éviter les doublons)
+            if (!siteData.site_id || isSiteVisited(siteData.site_id)) return;
+
             const visitData = {
-                ...siteData,
+                site_id: siteData.site_id,
+                label: siteData.label || '',
+                orthos: siteData.orthos || 0,
+                orthos_list: siteData.orthos_list || [],
+                lat: siteData.lat,
+                lon: siteData.lon,
                 visitedAt: new Date().toISOString(),
                 visitedDate: new Date().toLocaleDateString('fr-FR'),
                 visitedTime: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
@@ -1395,9 +1443,11 @@
             saveVisitedSites();
             updateVisitedList();
             updateTabCounts();
+            refreshRouteDisplay();
         }
 
         function isSiteVisited(siteId) {
+            if (!siteId) return false;
             return visitedSites.some(v => v.site_id === siteId);
         }
 
@@ -2060,9 +2110,11 @@
                         ou contactez-moi directement :
                     </p>
 
-                    <p style="text-align: center; margin: 20px 0; color: #666; font-style: italic;">
-                        [QR CODE vers logesia.com]
-                    </p>
+                    <div class="letter-qr-section">
+                        <div class="letter-qr-label">Scannez ce QR code pour découvrir Logesia :</div>
+                        <img class="letter-qr-image" src="/qr-code.svg" alt="QR code vers Logesia">
+                        <a class="letter-qr-link" href="https://logesia.com" target="_blank" rel="noopener noreferrer">logesia.com</a>
+                    </div>
                 </div>
 
                 <div class="letter-signature">
