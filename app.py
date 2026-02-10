@@ -320,10 +320,11 @@ def api_generate():
     if transport_mode not in ("driving", "foot"):
         transport_mode = "driving"
 
-    # NOUVEAU : Point de départ personnalisé
+    # Point de départ personnalisé
     start_lat = body.get("start_lat")
     start_lon = body.get("start_lon")
     start_address = body.get("start_address", "")
+    radius_km = body.get("radius_km")
 
     df_sites = _data["df_sites"].copy()
 
@@ -346,6 +347,19 @@ def api_generate():
         & df_sites["latitude"].notna()
         & df_sites["longitude"].notna()
     ].copy().reset_index(drop=True)
+
+    # ── Filtrage par rayon autour du point de départ ──────────────────
+    if radius_km and start_lat is not None and start_lon is not None:
+        radius_km = float(radius_km)
+        df_routable["_dist_km"] = df_routable.apply(
+            lambda r: haversine_distance(start_lat, start_lon, r["latitude"], r["longitude"]),
+            axis=1,
+        )
+        n_before = len(df_routable)
+        df_routable = df_routable[df_routable["_dist_km"] <= radius_km].copy()
+        df_routable.drop(columns=["_dist_km"], inplace=True)
+        df_routable.reset_index(drop=True, inplace=True)
+        print(f"  [route] Filtre rayon {radius_km} km : {n_before} → {len(df_routable)} sites")
 
     n_routable = len(df_routable)
 

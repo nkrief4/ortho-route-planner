@@ -1237,6 +1237,19 @@
                     </small>
                 </div>
 
+                <!-- Rayon de recherche (visible si point de départ renseigné) -->
+                <div class="field" id="radiusField" style="display:none;">
+                    <label for="radiusSelect">Rayon de recherche</label>
+                    <select id="radiusSelect">
+                        <option value="">Toute la zone</option>
+                        <option value="1">1 km</option>
+                        <option value="1.5">1,5 km</option>
+                        <option value="2">2 km</option>
+                        <option value="3" selected>3 km</option>
+                        <option value="5">5 km</option>
+                    </select>
+                </div>
+
                 <!-- Mode de transport -->
                 <div class="field">
                     <label>Mode de transport</label>
@@ -1739,11 +1752,16 @@
                     transport_mode: transportMode,
                 };
 
-                // NOUVEAU : Ajouter point de départ et rayon si définis
+                // Ajouter point de départ et rayon si définis
                 if (startPoint) {
                     body.start_lat = startPoint.lat;
                     body.start_lon = startPoint.lon;
                     body.start_address = startPoint.address;
+
+                    const radiusVal = document.getElementById('radiusSelect').value;
+                    if (radiusVal) {
+                        body.radius_km = parseFloat(radiusVal);
+                    }
                 }
 
                 const resp = await fetch('/api/generate', {
@@ -2013,6 +2031,14 @@
         updatePlaceholders();
         window.addEventListener('resize', updatePlaceholders);
 
+        // ── Show/hide radius field based on start address ───
+        const startAddressField = document.getElementById('startAddress');
+        const radiusField = document.getElementById('radiusField');
+
+        startAddressField.addEventListener('input', () => {
+            radiusField.style.display = startAddressField.value.trim() ? 'block' : 'none';
+        });
+
         // ── Letter Modal Management ──────────────────────
         function generateLetterContent(orthoData) {
             const today = new Date().toLocaleDateString('fr-FR', {
@@ -2064,40 +2090,41 @@
 
                     <p>
                         Je m'appelle Nathan Krief, j'ai 22 ans et je suis étudiant-entrepreneur.
-                        Je développe <strong>Logesia</strong>, une plateforme numérique pensée pour
-                        simplifier le quotidien des orthophonistes.
+                        Je développe <strong>Logesia</strong>, une plateforme numérique conçue pour
+                        libérer du temps clinique aux orthophonistes en réduisant la charge administrative.
                     </p>
 
                     <p><strong>Pourquoi je vous écris personnellement ?</strong></p>
 
                     <p>
                         Plus jeune, j'ai moi-même été suivi en orthophonie. Ma meilleure amie est
-                        orthophoniste. En échangeant avec elle, j'ai réalisé à quel point le métier
-                        est envahi par des tâches administratives qui empiètent sur le temps clinique.
-                        J'ai voulu créer un outil qui change cela.
+                        orthophoniste. En échangeant avec elle, j'ai pris conscience du temps
+                        considérable que le métier consacre à l'administratif — au détriment du
+                        temps passé avec les patients. J'ai voulu créer un outil pour rééquilibrer cela.
                     </p>
 
-                    <p><strong>Logesia permet concrètement de :</strong></p>
+                    <p><strong>Concrètement, Logesia vous permet de :</strong></p>
                     <ul style="margin-left: 20px; margin-bottom: 15px;">
-                        <li>gagner du temps sur les comptes rendus et la documentation clinique ;</li>
+                        <li>réduire le temps passé sur les comptes rendus et la documentation clinique ;</li>
                         <li>générer des exercices personnalisés, adaptés à chaque patient et à ses progrès ;</li>
                         <li>structurer le suivi thérapeutique avec une trame adaptative, séance après séance.</li>
                     </ul>
 
                     <p>
-                        Le tout est assisté par intelligence artificielle, mais toujours sous votre
-                        contrôle : c'est vous le professionnel, l'outil vous assiste. Et ce n'est
-                        qu'un début : de nombreuses fonctionnalités sont en cours de développement
-                        pour aller encore plus loin.
+                        L'ensemble est assisté par intelligence artificielle, mais vous gardez le
+                        contrôle à chaque étape : c'est vous qui décidez, l'outil s'adapte à votre
+                        pratique. Et ce n'est qu'un début — de nombreuses fonctionnalités sont en
+                        cours de développement.
                     </p>
 
                     <p><strong>Ce que je recherche, ce n'est pas un client, mais un regard d'expert.</strong></p>
 
                     <p>
-                        La plateforme existe et fonctionne, mais j'ai besoin de professionnels de
-                        terrain pour me dire ce qui manque, ce qui ne va pas et ce qu'il faut améliorer.
+                        La plateforme existe et fonctionne. Mais pour qu'elle soit vraiment utile au
+                        quotidien, j'ai besoin de professionnels de terrain : vos retours, vos
+                        suggestions et vos exigences sont essentiels.
                         Concrètement, je cherche des orthophonistes prêts à tester Logesia et à me
-                        faire leurs retours, même sévères.
+                        faire part de leurs observations, même les plus critiques.
                     </p>
 
                     <p>
