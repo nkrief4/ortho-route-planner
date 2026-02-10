@@ -327,6 +327,7 @@ def api_generate():
     start_lon = body.get("start_lon")
     start_address = body.get("start_address", "")
     radius_km = float(body.get("radius_km", 5))
+    total_in_zone = 0  # nombre total de sites trouvés dans le rayon
 
     df_sites = _data["df_sites"].copy()
 
@@ -349,7 +350,15 @@ def api_generate():
 
         # Filtrer par rayon
         df_sites = df_sites[df_sites["distance_km"] <= radius_km].copy()
-        print(f"  [zone] {len(df_sites)} sites dans un rayon de {radius_km} km")
+
+        # Si trop de sites, garder les plus proches (max 300)
+        total_in_zone = len(df_sites)  # sauvegarder avant troncature
+        MAX_ZONE_SITES = 300
+        if total_in_zone > MAX_ZONE_SITES:
+            df_sites = df_sites.nsmallest(MAX_ZONE_SITES, "distance_km").copy()
+            print(f"  [zone] {total_in_zone} sites dans le rayon, limité aux {MAX_ZONE_SITES} plus proches")
+        else:
+            print(f"  [zone] {total_in_zone} sites dans un rayon de {radius_km} km")
 
     elif dept_filter:
         mask = df_sites["postal_code_clean"].str.startswith(dept_filter)
@@ -388,12 +397,17 @@ def api_generate():
         })
 
     if n_routable > 300:
-        return jsonify({
-            "error": (
-                f"Trop de sites ({n_routable}) pour le calcul en temps réel. "
-                f"Filtrez par arrondissement/code postal."
-            ),
-        }), 400
+        if search_mode == "zone":
+            # En mode zone, on tronque aux 300 plus proches (ne devrait pas arriver)
+            df_routable = df_routable.head(300).copy()
+            n_routable = len(df_routable)
+        else:
+            return jsonify({
+                "error": (
+                    f"Trop de sites ({n_routable}) pour le calcul en temps réel. "
+                    f"Filtrez par arrondissement/code postal."
+                ),
+            }), 400
 
     # ── Phase 6 : Matrice OSRM ────────────────────────────────────────
     from pipeline.routing import (
@@ -532,6 +546,12 @@ def api_generate():
 
     if search_mode == "zone":
         stats["radius_km"] = radius_km
+        stats["total_in_zone"] = total_in_zone
+        if total_in_zone > n_routable:
+            stats["message"] = (
+                f"{total_in_zone} sites dans le rayon de {radius_km} km, "
+                f"itinéraire calculé sur les {n_routable} plus proches."
+            )
 
     return jsonify({
         "map_html": map_html,
