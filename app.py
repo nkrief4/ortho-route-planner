@@ -296,22 +296,24 @@ def api_geocode():
 @app.route("/api/generate", methods=["POST"])
 def api_generate():
     """
-    Génère le shortest path pour une ville ou un code postal.
+    Génère le shortest path pour une ville ou un code postal, ou par zone (rayon).
     Body JSON : {
-        "city": "PARIS",
-        "dept": "75015",
+        "search_mode": "city" | "zone",       # Mode de recherche
+        "city": "PARIS",                       # Mode city : ville
+        "dept": "75015",                       # Mode city : code postal
         "closed_loop": false,
         "tsp_limit": 30,
-        "start_address": "15 Avenue des Champs-Élysées, Paris",  # NOUVEAU
-        "start_lat": 48.8698,                                      # NOUVEAU (pré-géocodé)
-        "start_lon": 2.3078,                                       # NOUVEAU
-        "radius_km": 5                                             # NOUVEAU (rayon en km)
+        "start_address": "15 Avenue des Champs-Élysées, Paris",
+        "start_lat": 48.8698,                  # Pré-géocodé
+        "start_lon": 2.3078,                   # Pré-géocodé
+        "radius_km": 5                         # Mode zone : rayon en km
     }
     """
     if not _data["ready"]:
         return jsonify({"error": "Données pas encore chargées"}), 503
 
     body = request.get_json(force=True)
+    search_mode = body.get("search_mode", "city")
     city_filter = (body.get("city") or "").strip().upper()
     dept_filter = (body.get("dept") or "").strip()
     closed_loop = body.get("closed_loop", False)
@@ -320,15 +322,36 @@ def api_generate():
     if transport_mode not in ("driving", "foot"):
         transport_mode = "driving"
 
-    # NOUVEAU : Point de départ personnalisé
+    # Point de départ personnalisé
     start_lat = body.get("start_lat")
     start_lon = body.get("start_lon")
     start_address = body.get("start_address", "")
+    radius_km = float(body.get("radius_km", 5))
 
     df_sites = _data["df_sites"].copy()
 
     # ── Filtrage ──────────────────────────────────────────────────────
-    if dept_filter:
+    if search_mode == "zone":
+        # Mode zone : filtrer par rayon autour du point de départ
+        if start_lat is None or start_lon is None:
+            return jsonify({"error": "Le mode zone nécessite un point de départ géocodé"}), 400
+
+        # Ne garder que les sites géocodés pour le calcul de distance
+        df_sites = df_sites[
+            df_sites["latitude"].notna() & df_sites["longitude"].notna()
+        ].copy()
+
+        # Calculer la distance de chaque site au point de départ
+        df_sites["distance_km"] = df_sites.apply(
+            lambda row: haversine_distance(start_lat, start_lon, row["latitude"], row["longitude"]),
+            axis=1,
+        )
+
+        # Filtrer par rayon
+        df_sites = df_sites[df_sites["distance_km"] <= radius_km].copy()
+        print(f"  [zone] {len(df_sites)} sites dans un rayon de {radius_km} km")
+
+    elif dept_filter:
         mask = df_sites["postal_code_clean"].str.startswith(dept_filter)
         df_sites = df_sites[mask].copy()
     elif city_filter:
@@ -495,19 +518,25 @@ def api_generate():
     total_min = total_duration / 60
     total_h = total_duration / 3600
 
+    stats = {
+        "total_sites": len(df_sites),
+        "routable_sites": n_routable,
+        "visited_sites": len(route_order),
+        "total_duration_min": round(total_min, 1),
+        "total_duration_h": round(total_h, 2),
+        "avg_segment_min": round(total_min / max(len(route_order) - 1, 1), 1),
+        "closed_loop": closed_loop,
+        "transport_mode": transport_mode,
+        "search_mode": search_mode,
+    }
+
+    if search_mode == "zone":
+        stats["radius_km"] = radius_km
+
     return jsonify({
         "map_html": map_html,
         "route": route_list,
-        "stats": {
-            "total_sites": len(df_sites),
-            "routable_sites": n_routable,
-            "visited_sites": len(route_order),
-            "total_duration_min": round(total_min, 1),
-            "total_duration_h": round(total_h, 2),
-            "avg_segment_min": round(total_min / max(len(route_order) - 1, 1), 1),
-            "closed_loop": closed_loop,
-            "transport_mode": transport_mode,
-        },
+        "stats": stats,
     })
 
 

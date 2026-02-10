@@ -251,6 +251,96 @@
         }
 
         /* ── Transport toggle ───────────────────────────── */
+        /* ── Search mode toggle ────────────────────────── */
+        .search-mode-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .search-mode-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .search-mode-btn:hover {
+            border-color: var(--accent);
+            color: var(--text);
+        }
+
+        .search-mode-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        /* ── Radius selector ──────────────────────────── */
+        .radius-selector {
+            display: none;
+            margin-bottom: 12px;
+        }
+
+        .radius-selector.visible {
+            display: block;
+        }
+
+        .radius-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .radius-chip {
+            padding: 6px 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .radius-chip:hover {
+            border-color: var(--accent);
+            color: var(--text);
+        }
+
+        .radius-chip.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .zone-info {
+            display: none;
+            padding: 8px 12px;
+            background: var(--surface-2);
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .zone-info.visible { display: block; }
+
+        .zone-info .count {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
         .transport-toggle {
             display: flex;
             gap: 8px;
@@ -991,6 +1081,25 @@
                 font-size: 10px;
             }
 
+            /* Search mode and radius compact on mobile */
+            .search-mode-toggle {
+                gap: 6px;
+            }
+
+            .search-mode-btn {
+                padding: 7px 10px;
+                font-size: 12px;
+            }
+
+            .radius-options {
+                gap: 4px;
+            }
+
+            .radius-chip {
+                padding: 5px 10px;
+                font-size: 12px;
+            }
+
             /* Route list plus compact sur mobile */
             .route-list {
                 max-height: 25vh;
@@ -1195,45 +1304,99 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-section">
-                <h2>Filtre</h2>
+                <h2>Mode de recherche</h2>
 
-                <div class="field">
-                    <label for="cityInput">Ville</label>
-                    <div class="autocomplete">
-                        <input
-                            type="text"
-                            id="cityInput"
-                            class="autocomplete-input"
-                            placeholder="Rechercher une ville..."
-                            autocomplete="off"
-                        >
-                        <div id="cityDropdown" class="autocomplete-dropdown"></div>
+                <div class="search-mode-toggle">
+                    <button type="button" class="search-mode-btn active" data-mode="city" id="btnModeCity">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 21h18M5 21V7l8-4v18M13 21V3l6 3v15"/>
+                            <path d="M9 9h.01M9 13h.01M9 17h.01"/>
+                        </svg>
+                        Par ville
+                    </button>
+                    <button type="button" class="search-mode-btn" data-mode="zone" id="btnModeZone">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                        Par zone
+                    </button>
+                </div>
+
+                <!-- Filtres mode ville -->
+                <div id="cityFilters">
+                    <div class="field">
+                        <label for="cityInput">Ville</label>
+                        <div class="autocomplete">
+                            <input
+                                type="text"
+                                id="cityInput"
+                                class="autocomplete-input"
+                                placeholder="Rechercher une ville..."
+                                autocomplete="off"
+                            >
+                            <div id="cityDropdown" class="autocomplete-dropdown"></div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="deptSelect">Code postal / Arrondissement</label>
+                        <select id="deptSelect">
+                            <option value="">Toute la ville</option>
+                        </select>
+                    </div>
+
+                    <div class="city-info" id="cityInfo">
+                        <span class="count" id="cityInfoCount">0</span> sites —
+                        <span id="cityInfoOrthos">0</span> orthophonistes
                     </div>
                 </div>
 
-                <div class="field">
-                    <label for="deptSelect">Code postal / Arrondissement</label>
-                    <select id="deptSelect">
-                        <option value="">Toute la ville</option>
-                    </select>
+                <!-- Filtres mode zone -->
+                <div id="zoneFilters" style="display: none;">
+                    <div class="field">
+                        <label for="zoneCityInput">Ville de départ</label>
+                        <div class="autocomplete">
+                            <input
+                                type="text"
+                                id="zoneCityInput"
+                                class="autocomplete-input"
+                                placeholder="Rechercher une ville..."
+                                autocomplete="off"
+                            >
+                            <div id="zoneCityDropdown" class="autocomplete-dropdown"></div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>Rayon de recherche</label>
+                        <div class="radius-options">
+                            <button type="button" class="radius-chip" data-radius="2.5">2,5 km</button>
+                            <button type="button" class="radius-chip active" data-radius="5">5 km</button>
+                            <button type="button" class="radius-chip" data-radius="7.5">7,5 km</button>
+                            <button type="button" class="radius-chip" data-radius="10">10 km</button>
+                            <button type="button" class="radius-chip" data-radius="15">15 km</button>
+                            <button type="button" class="radius-chip" data-radius="20">20 km</button>
+                        </div>
+                    </div>
+
+                    <div class="zone-info" id="zoneInfo">
+                        Recherche inter-arrondissements dans un rayon de <span class="count" id="zoneRadiusDisplay">5</span> km
+                    </div>
                 </div>
 
-                <div class="city-info" id="cityInfo">
-                    <span class="count" id="cityInfoCount">0</span> sites —
-                    <span id="cityInfoOrthos">0</span> orthophonistes
-                </div>
-
-                <!-- NOUVEAU : Point de départ personnalisé -->
+                <!-- Point de départ personnalisé -->
                 <div class="field">
-                    <label for="startAddress">📍 Point de départ (optionnel)</label>
+                    <label for="startAddress" id="startAddressLabel">Point de depart (optionnel)</label>
                     <input
                         type="text"
                         id="startAddress"
-                        placeholder="Ex: 15 Avenue des Champs-Élysées"
+                        placeholder="Ex: 15 Avenue des Champs-Elysees"
                         autocomplete="off"
                     >
-                    <small style="font-size:11px;color:var(--text-muted);margin-top:4px;display:block;">
-                        Entrez uniquement le numéro et le nom de la rue (la ville est déjà sélectionnée)
+                    <small id="startAddressHint" style="font-size:11px;color:var(--text-muted);margin-top:4px;display:block;">
+                        Entrez uniquement le numero et le nom de la rue (la ville est deja selectionnee)
                     </small>
                 </div>
 
@@ -1396,6 +1559,10 @@
         let currentRoute = [];  // Current route data
         let visitedSites = [];  // Visited sites with timestamp
         let transportMode = 'driving';  // 'driving' or 'foot'
+        let searchMode = 'city';  // 'city' or 'zone'
+        let selectedZoneCity = null;
+        let selectedZoneIndex = -1;
+        let selectedRadius = 5;  // default 5 km
 
         // ── LocalStorage management ──────────────────────
         function loadVisitedSites() {
@@ -1671,20 +1838,31 @@
         generateBtn.addEventListener('click', generateRoute);
 
         async function generateRoute() {
-            if (!selectedCity) {
-                showToast('Veuillez sélectionner une ville');
-                return;
+            const isZoneMode = searchMode === 'zone';
+
+            if (isZoneMode) {
+                if (!selectedZoneCity) {
+                    showToast('Veuillez selectionner une ville de depart');
+                    return;
+                }
+                const startAddr = document.getElementById('startAddress').value.trim();
+                if (!startAddr) {
+                    showToast('En mode zone, l\'adresse de depart est obligatoire');
+                    return;
+                }
+            } else {
+                if (!selectedCity) {
+                    showToast('Veuillez selectionner une ville');
+                    return;
+                }
             }
 
-            const city = selectedCity.name;
-            const dept = deptSelect.value;
+            const city = isZoneMode ? selectedZoneCity.name : selectedCity.name;
+            const dept = isZoneMode ? '' : deptSelect.value;
             const tspLimit = parseInt(document.getElementById('tspLimit').value) || 30;
             const closedLoop = document.getElementById('closedLoop').checked;
 
-            // NOUVEAU : Gérer le point de départ
             const startAddressInput = document.getElementById('startAddress').value.trim();
-
-            if (!city) return;
 
             // Show loading
             generateBtn.disabled = true;
@@ -1693,11 +1871,10 @@
             routeList.classList.remove('visible');
 
             try {
-                // NOUVEAU : Géocoder le point de départ si fourni
+                // Geocoder le point de depart si fourni (obligatoire en zone, optionnel en city)
                 if (startAddressInput) {
-                    loadingText.textContent = 'Géocodage du point de départ...';
+                    loadingText.textContent = 'Geocodage du point de depart...';
 
-                    // Utiliser la ville et le département sélectionnés
                     const geocodeResp = await fetch('/api/geocode', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -1711,7 +1888,7 @@
                     const geocodeData = await geocodeResp.json();
 
                     if (!geocodeResp.ok) {
-                        showToast(geocodeData.error || 'Impossible de géocoder l\'adresse de départ');
+                        showToast(geocodeData.error || 'Impossible de geocoder l\'adresse de depart');
                         generateBtn.disabled = false;
                         loadingOverlay.classList.remove('visible');
                         return;
@@ -1723,15 +1900,20 @@
                         address: geocodeData.geocoded_label
                     };
 
-                    loadingText.textContent = `Départ: ${startPoint.address}`;
+                    loadingText.textContent = `Depart: ${startPoint.address}`;
                 } else {
                     startPoint = null;
                 }
 
                 const modeLabel = transportMode === 'foot' ? 'a pied' : 'en voiture';
-                loadingText.textContent = `Calcul de l'itinéraire ${modeLabel}…`;
+                if (isZoneMode) {
+                    loadingText.textContent = `Recherche dans un rayon de ${selectedRadius} km ${modeLabel}...`;
+                } else {
+                    loadingText.textContent = `Calcul de l'itineraire ${modeLabel}...`;
+                }
 
                 const body = {
+                    search_mode: searchMode,
                     city: city,
                     dept: dept,
                     closed_loop: closedLoop,
@@ -1739,11 +1921,15 @@
                     transport_mode: transportMode,
                 };
 
-                // NOUVEAU : Ajouter point de départ et rayon si définis
+                // Ajouter point de depart et rayon si definis
                 if (startPoint) {
                     body.start_lat = startPoint.lat;
                     body.start_lon = startPoint.lon;
                     body.start_address = startPoint.address;
+                }
+
+                if (isZoneMode) {
+                    body.radius_km = selectedRadius;
                 }
 
                 const resp = await fetch('/api/generate', {
@@ -1963,7 +2149,140 @@
             setTimeout(() => toast.classList.remove('visible'), 5000);
         }
 
-        // ── Transport mode toggle ────────────────────────
+        // ── Search mode toggle ─────────────────────────
+        document.querySelectorAll('.search-mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.search-mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                searchMode = btn.dataset.mode;
+
+                const cityFilters = document.getElementById('cityFilters');
+                const zoneFilters = document.getElementById('zoneFilters');
+                const startAddressLabel = document.getElementById('startAddressLabel');
+                const startAddressHint = document.getElementById('startAddressHint');
+
+                if (searchMode === 'zone') {
+                    cityFilters.style.display = 'none';
+                    zoneFilters.style.display = 'block';
+                    startAddressLabel.textContent = 'Adresse de depart (obligatoire)';
+                    startAddressHint.textContent = 'Le rayon de recherche partira de cette adresse';
+                    document.getElementById('zoneInfo').classList.add('visible');
+                    // Enable generate button if zone city is selected
+                    generateBtn.disabled = !selectedZoneCity;
+                } else {
+                    cityFilters.style.display = 'block';
+                    zoneFilters.style.display = 'none';
+                    startAddressLabel.textContent = 'Point de depart (optionnel)';
+                    startAddressHint.textContent = 'Entrez uniquement le numero et le nom de la rue (la ville est deja selectionnee)';
+                    document.getElementById('zoneInfo').classList.remove('visible');
+                    // Enable generate button if city is selected
+                    generateBtn.disabled = !selectedCity;
+                }
+            });
+        });
+
+        // ── Zone city autocomplete ────────────────────────
+        const zoneCityInput = document.getElementById('zoneCityInput');
+        const zoneCityDropdown = document.getElementById('zoneCityDropdown');
+
+        function renderZoneDropdown(filtered) {
+            if (filtered.length === 0) {
+                zoneCityDropdown.innerHTML = '<div class="autocomplete-empty">Aucune ville trouvee</div>';
+                zoneCityDropdown.classList.add('visible');
+                return;
+            }
+
+            zoneCityDropdown.innerHTML = filtered.map((c, i) => `
+                <div class="autocomplete-item ${i === selectedZoneIndex ? 'selected' : ''}" data-index="${i}">
+                    <div class="city-name">${c.name}</div>
+                    <div class="city-stats">${c.orthos} orthophonistes - ${c.sites} sites</div>
+                </div>
+            `).join('');
+
+            zoneCityDropdown.classList.add('visible');
+
+            zoneCityDropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const idx = parseInt(item.dataset.index);
+                    selectZoneCity(filtered[idx]);
+                });
+            });
+        }
+
+        function selectZoneCity(city) {
+            selectedZoneCity = city;
+            zoneCityInput.value = city.name;
+            zoneCityDropdown.classList.remove('visible');
+            selectedZoneIndex = -1;
+            generateBtn.disabled = false;
+        }
+
+        zoneCityInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            selectedZoneIndex = -1;
+
+            if (!query) {
+                zoneCityDropdown.classList.remove('visible');
+                selectedZoneCity = null;
+                generateBtn.disabled = true;
+                return;
+            }
+
+            const filtered = filterCities(query);
+            renderZoneDropdown(filtered);
+        });
+
+        zoneCityInput.addEventListener('focus', (e) => {
+            const query = e.target.value.trim();
+            if (query) {
+                const filtered = filterCities(query);
+                renderZoneDropdown(filtered);
+            }
+        });
+
+        zoneCityInput.addEventListener('keydown', (e) => {
+            const items = zoneCityDropdown.querySelectorAll('.autocomplete-item');
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedZoneIndex = Math.min(selectedZoneIndex + 1, items.length - 1);
+                renderZoneDropdown(filterCities(zoneCityInput.value.trim()));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedZoneIndex = Math.max(selectedZoneIndex - 1, 0);
+                renderZoneDropdown(filterCities(zoneCityInput.value.trim()));
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedZoneIndex >= 0 && items[selectedZoneIndex]) {
+                    const filtered = filterCities(zoneCityInput.value.trim());
+                    selectZoneCity(filtered[selectedZoneIndex]);
+                } else if (items.length === 1) {
+                    const filtered = filterCities(zoneCityInput.value.trim());
+                    selectZoneCity(filtered[0]);
+                }
+            } else if (e.key === 'Escape') {
+                zoneCityDropdown.classList.remove('visible');
+            }
+        });
+
+        // Close zone dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#zoneFilters .autocomplete')) {
+                zoneCityDropdown.classList.remove('visible');
+            }
+        });
+
+        // ── Radius chip selection ─────────────────────────
+        document.querySelectorAll('.radius-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.radius-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                selectedRadius = parseFloat(chip.dataset.radius);
+                document.getElementById('zoneRadiusDisplay').textContent = chip.dataset.radius.replace('.', ',');
+            });
+        });
+
+        // ── Transport mode toggle ─────────────────────────
         document.querySelectorAll('.transport-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.transport-btn').forEach(b => b.classList.remove('active'));
@@ -1995,17 +2314,17 @@
             const width = window.innerWidth;
 
             if (width <= 374) {
-                // Très petit mobile
-                startAddressInput.placeholder = "Ex: 15 Ave Champs-Élysées";
+                startAddressInput.placeholder = "Ex: 15 Ave Champs-Elysees";
                 cityInput.placeholder = "Ville...";
+                zoneCityInput.placeholder = "Ville...";
             } else if (width <= 768) {
-                // Mobile
-                startAddressInput.placeholder = "Ex: 15 Avenue des Champs-Élysées";
+                startAddressInput.placeholder = "Ex: 15 Avenue des Champs-Elysees";
                 cityInput.placeholder = "Rechercher une ville...";
+                zoneCityInput.placeholder = "Rechercher une ville...";
             } else {
-                // Desktop
-                startAddressInput.placeholder = "Ex: 15 Avenue des Champs-Élysées";
+                startAddressInput.placeholder = "Ex: 15 Avenue des Champs-Elysees";
                 cityInput.placeholder = "Rechercher une ville...";
+                zoneCityInput.placeholder = "Rechercher une ville...";
             }
         }
 
