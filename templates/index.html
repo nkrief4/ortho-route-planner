@@ -1370,6 +1370,13 @@
                     </div>
 
                     <div class="field">
+                        <label for="zoneDeptSelect">Arrondissement / Code postal</label>
+                        <select id="zoneDeptSelect">
+                            <option value="">Toute la ville</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
                         <label>Rayon de recherche</label>
                         <div class="radius-options">
                             <button type="button" class="radius-chip" data-radius="2.5">2,5 km</button>
@@ -1858,7 +1865,7 @@
             }
 
             const city = isZoneMode ? selectedZoneCity.name : selectedCity.name;
-            const dept = isZoneMode ? '' : deptSelect.value;
+            const dept = isZoneMode ? document.getElementById('zoneDeptSelect').value : deptSelect.value;
             const tspLimit = parseInt(document.getElementById('tspLimit').value) || 30;
             const closedLoop = document.getElementById('closedLoop').checked;
 
@@ -2215,6 +2222,18 @@
             zoneCityDropdown.classList.remove('visible');
             selectedZoneIndex = -1;
             generateBtn.disabled = false;
+
+            // Populate arrondissement dropdown
+            const zoneDeptSelect = document.getElementById('zoneDeptSelect');
+            zoneDeptSelect.innerHTML = '<option value="">Toute la ville</option>';
+            if (city.depts && city.depts.length > 1) {
+                city.depts.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d;
+                    zoneDeptSelect.appendChild(opt);
+                });
+            }
         }
 
         zoneCityInput.addEventListener('input', (e) => {
