@@ -1432,7 +1432,7 @@
         }
 
         async function markAsVisited(siteData) {
-            if (!siteData.site_id || isSiteVisited(siteData.site_id)) return;
+            if (!siteData.site_id || isSiteVisited(siteData.site_id)) return false;
 
             try {
                 const resp = await fetch('/api/visits', {
@@ -1445,7 +1445,10 @@
                         lon: siteData.lon,
                     }),
                 });
-                if (!resp.ok) throw new Error('Erreur serveur');
+                if (!resp.ok) {
+                    const errData = await resp.json().catch(() => ({}));
+                    throw new Error(errData.error || `Erreur serveur (${resp.status})`);
+                }
 
                 const doc = await resp.json();
 
@@ -1463,12 +1466,13 @@
                 });
             } catch (e) {
                 console.error('Failed to mark visited', e);
-                showToast('Erreur : impossible de sauvegarder la visite');
-                return;
+                showToast('Erreur : ' + e.message);
+                return false;
             }
 
             updateVisitedList();
             updateTabCounts();
+            return true;
         }
 
         async function unmarkAsVisited(siteId) {
@@ -1923,7 +1927,8 @@
         async function validateVisit(routeIndex) {
             if (routeIndex >= 0 && routeIndex < currentRoute.length) {
                 const site = currentRoute[routeIndex];
-                await markAsVisited(site);
+                const ok = await markAsVisited(site);
+                if (!ok) return;
                 showToast(`✓ Visite validée : ${site.label || site.address}`);
 
                 // Refresh the route display to update the UI
