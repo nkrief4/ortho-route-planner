@@ -309,6 +309,22 @@
             cursor: not-allowed;
         }
 
+        .btn-gmaps {
+            width: 100%;
+            margin-top: 10px;
+            background: var(--surface-2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-gmaps:hover {
+            background: var(--border);
+        }
+
         /* ── City info badge ────────────────────────────── */
         .city-info {
             display: none;
@@ -963,6 +979,13 @@
             display: flex;
         }
 
+        @media (max-width: 768px) {
+            .loading-overlay {
+                position: fixed;
+                z-index: 999;
+            }
+        }
+
         .spinner {
             width: 40px;
             height: 40px;
@@ -1518,6 +1541,16 @@
                         <div class="lbl">Orthos total</div>
                     </div>
                 </div>
+                <div style="display:flex;gap:8px;margin-top:10px;">
+                    <button class="btn btn-gmaps" style="flex:1;margin-top:0;" onclick="openGoogleMaps()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        Google Maps
+                    </button>
+                    <button class="btn btn-gmaps" style="flex:1;margin-top:0;" onclick="openWaze()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><circle cx="9" cy="10" r="1.5"/><circle cx="15" cy="10" r="1.5"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>
+                        Waze
+                    </button>
+                </div>
             </div>
 
             <!-- Route list with tabs -->
@@ -1998,6 +2031,7 @@
             // Show loading
             generateBtn.disabled = true;
             loadingOverlay.classList.add('visible');
+            collapseSheet();
             routeStats.classList.remove('visible');
             routeList.classList.remove('visible');
 
@@ -2314,6 +2348,13 @@
             sheetHandle.addEventListener('click', toggleSheet);
         }
 
+        // Tap on map (outside sidebar) to collapse the sheet
+        document.getElementById('mapArea').addEventListener('click', () => {
+            if (window.innerWidth <= 768 && !sidebar.classList.contains('sheet-collapsed')) {
+                collapseSheet();
+            }
+        });
+
         // Collapse sheet when route is generated on mobile
         generateBtn.addEventListener('click', () => {
             if (window.innerWidth <= 768) {
@@ -2359,6 +2400,32 @@
         startAddressField.addEventListener('input', () => {
             radiusField.style.display = startAddressField.value.trim() ? 'block' : 'none';
         });
+
+        // ── Google Maps ──────────────────────────────────
+        function openGoogleMaps() {
+            const stops = currentRoute.filter(r => !isSiteVisited(r.site_id));
+            if (stops.length === 0) return;
+
+            // Google Maps URL: /dir/lat,lng/lat,lng/...
+            // Limit to ~25 waypoints (Google Maps URL limit)
+            const points = stops.slice(0, 25);
+            const path = points.map(s => `${s.lat},${s.lon}`).join('/');
+            const mode = transportMode === 'foot' ? 'walking' : 'driving';
+
+            const url = `https://www.google.com/maps/dir/${path}/?travelmode=${mode}`;
+            window.open(url, '_blank');
+        }
+
+        function openWaze() {
+            const stops = currentRoute.filter(r => !isSiteVisited(r.site_id));
+            if (stops.length === 0) return;
+
+            // Waze ne supporte qu'une seule destination à la fois
+            // On ouvre le premier stop non visité
+            const next = stops[0];
+            const url = `https://waze.com/ul?ll=${next.lat},${next.lon}&navigate=yes`;
+            window.open(url, '_blank');
+        }
 
         // ── Print all letters ────────────────────────────
         function getAllOrthosToVisit() {
