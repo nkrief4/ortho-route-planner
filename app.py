@@ -19,6 +19,9 @@ import gender_guesser.detector as gender_detector
 import pandas as pd
 from flask import Flask, jsonify, render_template, request, send_from_directory
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # ── Détecteur de genre (chargé une seule fois) ──────────────────────
 _gender_d = gender_detector.Detector()
 
@@ -361,6 +364,28 @@ def api_generate():
         df_routable.reset_index(drop=True, inplace=True)
         print(f"  [route] Filtre rayon {radius_km} km : {n_before} → {len(df_routable)} sites")
 
+    # ── Exclure les sites déjà visités du TSP ───────────────────────
+    from pipeline.db import get_all_visits
+    try:
+        visited_ids = {v["site_id"] for v in get_all_visits()}
+    except Exception:
+        visited_ids = set()
+
+    if visited_ids:
+        df_routable["_site_id_cmp"] = df_routable.apply(
+            lambda r: f"{r['latitude']:.5f},{r['longitude']:.5f}", axis=1,
+        )
+        mask_visited = df_routable["_site_id_cmp"].isin(visited_ids)
+        df_visited_on_map = df_routable[mask_visited].copy()
+        df_routable = df_routable[~mask_visited].copy()
+        df_routable.drop(columns=["_site_id_cmp"], inplace=True)
+        df_visited_on_map.drop(columns=["_site_id_cmp"], inplace=True)
+        df_routable.reset_index(drop=True, inplace=True)
+        df_visited_on_map.reset_index(drop=True, inplace=True)
+        print(f"  [route] {len(df_visited_on_map)} sites visités exclus du TSP")
+    else:
+        df_visited_on_map = pd.DataFrame()
+
     n_routable = len(df_routable)
 
     if n_routable < 2:
@@ -485,7 +510,8 @@ def api_generate():
         lambda sid: orthos_by_site.get(sid, [])
     )
 
-    m = create_route_map(df_routable_enriched, route_order, route_geom)
+    m = create_route_map(df_routable_enriched, route_order, route_geom,
+                         df_visited=df_visited_on_map)
     map_html = m._repr_html_()
 
     # ── Construire la réponse ─────────────────────────────────────────
@@ -523,6 +549,55 @@ def api_generate():
             "transport_mode": transport_mode,
         },
     })
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  API Visites (MongoDB Atlas)
+# ═══════════════════════════════════════════════════════════════════════
+
+@app.route("/api/visits", methods=["GET"])
+def api_visits_list():
+    """Retourne tous les sites visités."""
+    from pipeline.db import get_all_visits
+    try:
+        visits = get_all_visits()
+        return jsonify(visits)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/visits", methods=["POST"])
+def api_visits_create():
+    """Marquer un site comme visité."""
+    from pipeline.db import mark_visited
+    body = request.get_json(force=True)
+
+    site_id = (body.get("site_id") or "").strip()
+    label = (body.get("label") or "").strip()
+    lat = body.get("lat")
+    lon = body.get("lon")
+
+    if not site_id:
+        return jsonify({"error": "site_id requis"}), 400
+
+    try:
+        doc = mark_visited(site_id, label, float(lat or 0), float(lon or 0))
+        return jsonify(doc), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/visits/<path:site_id>", methods=["DELETE"])
+def api_visits_delete(site_id: str):
+    """Retirer un site des visités."""
+    from pipeline.db import unmark_visited
+    try:
+        deleted = unmark_visited(site_id)
+        if deleted:
+            return jsonify({"ok": True})
+        return jsonify({"error": "Visite non trouvée"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ═══════════════════════════════════════════════════════════════════════

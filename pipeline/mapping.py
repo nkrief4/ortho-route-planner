@@ -80,6 +80,7 @@ def create_route_map(
     df_routable: pd.DataFrame,
     route_order: list[int],
     route_geometry: list[list[list[float]]] | None = None,
+    df_visited: pd.DataFrame | None = None,
 ) -> folium.Map:
     """
     Trace l'itinéraire optimal sur la carte.
@@ -173,6 +174,29 @@ def create_route_map(
                 icon_anchor=(11, 11),
             ),
         ).add_to(m)
+
+    # ── Marqueurs des sites visités (orange foncé, ✓) ────────────────
+    if df_visited is not None and not df_visited.empty:
+        for _, row in df_visited.iterrows():
+            popup_html = (
+                f"<b>{row.get('geocoded_label', '')}</b><br>"
+                f"<span style='color:#e67e22;font-weight:bold;'>Déjà visité ✓</span>"
+            )
+            folium.Marker(
+                location=[row["latitude"], row["longitude"]],
+                popup=folium.Popup(popup_html, max_width=300),
+                tooltip=f"Déjà visité — {row.get('geocoded_label', '')}",
+                icon=folium.DivIcon(
+                    html=(
+                        '<div style="background:#e67e22;color:#fff;border-radius:50%;'
+                        'width:22px;height:22px;text-align:center;line-height:22px;'
+                        'font-size:12px;font-weight:700;border:2px solid #fff;'
+                        'box-shadow:0 1px 3px rgba(0,0,0,.4);">✓</div>'
+                    ),
+                    icon_size=(22, 22),
+                    icon_anchor=(11, 11),
+                ),
+            ).add_to(m)
 
     return m
 

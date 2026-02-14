@@ -1410,50 +1410,80 @@
         let visitedSites = [];  // Visited sites with timestamp
         let transportMode = 'driving';  // 'driving' or 'foot'
 
-        // ── LocalStorage management ──────────────────────
-        function loadVisitedSites() {
+        // ── Visits API management (MongoDB) ──────────────
+        async function loadVisitedSites() {
             try {
-                const stored = localStorage.getItem('ortho_visited_sites_v2');
-                visitedSites = stored ? JSON.parse(stored) : [];
-                // Migration : supprimer l'ancien format (clés sans site_id fiable)
-                localStorage.removeItem('ortho_visited_sites');
+                const resp = await fetch('/api/visits');
+                if (!resp.ok) throw new Error('Erreur chargement visites');
+                const data = await resp.json();
+                visitedSites = data.map(v => ({
+                    site_id: v.site_id,
+                    label: v.label || '',
+                    lat: v.lat,
+                    lon: v.lon,
+                    visitedAt: v.visited_at,
+                    visitedDate: v.visited_at ? new Date(v.visited_at).toLocaleDateString('fr-FR') : '',
+                    visitedTime: v.visited_at ? new Date(v.visited_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
+                }));
             } catch (e) {
+                console.error('Failed to load visited sites', e);
                 visitedSites = [];
             }
         }
 
-        function saveVisitedSites() {
-            try {
-                localStorage.setItem('ortho_visited_sites_v2', JSON.stringify(visitedSites));
-            } catch (e) {
-                console.error('Failed to save visited sites', e);
-            }
-        }
-
-        function markAsVisited(siteData) {
-            // Ne pas ajouter si déjà visité (éviter les doublons)
+        async function markAsVisited(siteData) {
             if (!siteData.site_id || isSiteVisited(siteData.site_id)) return;
 
-            const visitData = {
-                site_id: siteData.site_id,
-                label: siteData.label || '',
-                orthos: siteData.orthos || 0,
-                orthos_list: siteData.orthos_list || [],
-                lat: siteData.lat,
-                lon: siteData.lon,
-                visitedAt: new Date().toISOString(),
-                visitedDate: new Date().toLocaleDateString('fr-FR'),
-                visitedTime: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-            };
-            visitedSites.unshift(visitData);
-            saveVisitedSites();
+            try {
+                const resp = await fetch('/api/visits', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        site_id: siteData.site_id,
+                        label: siteData.label || '',
+                        lat: siteData.lat,
+                        lon: siteData.lon,
+                    }),
+                });
+                if (!resp.ok) throw new Error('Erreur serveur');
+
+                const doc = await resp.json();
+
+                // Ajouter localement pour mise à jour immédiate de l'UI
+                visitedSites.unshift({
+                    site_id: doc.site_id,
+                    label: doc.label || siteData.label || '',
+                    orthos: siteData.orthos || 0,
+                    orthos_list: siteData.orthos_list || [],
+                    lat: doc.lat,
+                    lon: doc.lon,
+                    visitedAt: doc.visited_at,
+                    visitedDate: new Date(doc.visited_at).toLocaleDateString('fr-FR'),
+                    visitedTime: new Date(doc.visited_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+                });
+            } catch (e) {
+                console.error('Failed to mark visited', e);
+                showToast('Erreur : impossible de sauvegarder la visite');
+                return;
+            }
+
             updateVisitedList();
             updateTabCounts();
         }
 
-        function unmarkAsVisited(siteId) {
+        async function unmarkAsVisited(siteId) {
+            try {
+                const resp = await fetch(`/api/visits/${encodeURIComponent(siteId)}`, {
+                    method: 'DELETE',
+                });
+                if (!resp.ok) throw new Error('Erreur serveur');
+            } catch (e) {
+                console.error('Failed to unmark visited', e);
+                showToast('Erreur : impossible de supprimer la visite');
+                return;
+            }
+
             visitedSites = visitedSites.filter(v => v.site_id !== siteId);
-            saveVisitedSites();
             updateVisitedList();
             updateTabCounts();
             refreshRouteDisplay();
@@ -1890,10 +1920,10 @@
         }
 
         // ── Validate visit ───────────────────────────────
-        function validateVisit(routeIndex) {
+        async function validateVisit(routeIndex) {
             if (routeIndex >= 0 && routeIndex < currentRoute.length) {
                 const site = currentRoute[routeIndex];
-                markAsVisited(site);
+                await markAsVisited(site);
                 showToast(`✓ Visite validée : ${site.label || site.address}`);
 
                 // Refresh the route display to update the UI
@@ -2195,10 +2225,13 @@
         });
 
         // ── Init ─────────────────────────────────────────
-        loadVisitedSites();
-        initTabs();
-        updateVisitedList();
-        loadCities();
+        async function init() {
+            await loadVisitedSites();
+            initTabs();
+            updateVisitedList();
+            loadCities();
+        }
+        init();
     </script>
 </body>
 </html>
