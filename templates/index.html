@@ -399,6 +399,22 @@
             cursor: not-allowed;
         }
 
+        .btn-gmaps {
+            width: 100%;
+            margin-top: 10px;
+            background: var(--surface-2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-gmaps:hover {
+            background: var(--border);
+        }
+
         /* ── City info badge ────────────────────────────── */
         .city-info {
             display: none;
@@ -683,6 +699,81 @@
             font-size: 13px;
         }
 
+        /* ── Print all letters tab ─────────────────────── */
+        .printall-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .printall-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .printall-btn {
+            width: 100%;
+            padding: 10px 16px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .printall-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .printall-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border);
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        .printall-item .printall-order {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--surface-2);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .printall-item .printall-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .printall-item .printall-name {
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .printall-item .printall-addr {
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* (print-all letters opens in a dedicated window) */
+
         /* ── Letter Modal ───────────────────────────────── */
         .letter-modal {
             display: none;
@@ -800,6 +891,7 @@
 
         .letter-to {
             margin-bottom: 30px;
+            text-align: left;
         }
 
         .letter-to-name {
@@ -869,7 +961,7 @@
             font-weight: 600;
         }
 
-        /* Print styles */
+        /* Print styles — single letter (from modal) */
         @media print {
             body * {
                 visibility: hidden;
@@ -890,7 +982,9 @@
             }
 
             .letter-qr-section {
-                background: #fff;
+                background: #fff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             .letter-header,
@@ -975,6 +1069,13 @@
             display: flex;
         }
 
+        @media (max-width: 768px) {
+            .loading-overlay {
+                position: fixed;
+                z-index: 999;
+            }
+        }
+
         .spinner {
             width: 40px;
             height: 40px;
@@ -1011,59 +1112,224 @@
 
         .toast.visible { display: block; }
 
+        /* ── Bottom sheet handle (mobile only) ────────── */
+        .sheet-handle {
+            display: none;
+        }
+
+        /* ── Mobile floating panel ─────────────────────── */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 150;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 10px 12px;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+        }
+
+        .mobile-nav.visible {
+            display: block;
+        }
+
+        .mobile-nav-inner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mobile-nav-arrow {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            font-size: 18px;
+            transition: background 0.15s;
+        }
+
+        .mobile-nav-arrow:active {
+            background: var(--border);
+        }
+
+        .mobile-nav-arrow:disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .mobile-nav-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .mobile-nav-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 3px;
+        }
+
+        .mobile-nav-num {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .mobile-nav-num.start { background: var(--success); }
+        .mobile-nav-num.end { background: var(--danger); }
+
+        .mobile-nav-addr {
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mobile-nav-names {
+            font-size: 11px;
+            color: var(--accent);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mobile-nav-validate {
+            flex-shrink: 0;
+            padding: 10px 18px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+
+        .mobile-nav-validate:active {
+            background: #16a34a;
+        }
+
+        .mobile-nav-counter {
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
         /* ══════════════════════════════════════════════════ */
         /*  RESPONSIVE MOBILE                                 */
         /* ══════════════════════════════════════════════════ */
 
         @media (max-width: 768px) {
-            /* Header compact */
+            /* ── Header: hidden on mobile ─────────────── */
             header {
-                padding: 10px 16px;
-                flex-wrap: wrap;
+                display: none;
             }
 
-            header h1 {
-                font-size: 16px;
-            }
-
-            .header-stats {
-                font-size: 11px;
-                width: 100%;
-                margin-left: 0;
-                margin-top: 4px;
-            }
-
-            /* Layout vertical sur mobile */
+            /* ── Layout: map = full screen ─────────────── */
             .layout {
+                position: relative;
                 flex-direction: column;
             }
 
-            /* Menu toggle visible sur mobile */
-            .menu-toggle {
-                display: flex;
+            .map-area {
+                position: fixed;
+                inset: 0;
+                z-index: 1;
+                min-height: unset;
             }
 
-            /* Sidebar devient une barre en haut (cachée par défaut) */
+            .map-placeholder {
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* ── Sidebar → bottom sheet overlay ────────── */
             .sidebar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 20;
                 width: 100%;
                 min-width: 100%;
-                max-height: 0;
+                max-height: 80vh;
+                max-height: 80dvh;
                 border-right: none;
-                border-bottom: 1px solid var(--border);
-                overflow: hidden;
-                transition: max-height 0.3s ease;
-            }
-
-            .sidebar.mobile-open {
-                max-height: 60vh;
+                border-top: none;
+                border-radius: 18px 18px 0 0;
+                box-shadow: 0 -6px 30px rgba(0, 0, 0, 0.5);
                 overflow-y: auto;
+                overflow-x: hidden;
+                -webkit-overflow-scrolling: touch;
+                transition: transform 0.35s cubic-bezier(.4, 0, .2, 1);
+                transform: translateY(0);
             }
 
             .sidebar-section {
                 padding: 12px 16px;
             }
 
-            /* Stats plus compacts */
+            .sidebar > .sidebar-section:first-of-type {
+                padding-top: 4px;
+            }
+
+            /* Bottom sheet handle */
+            .sheet-handle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 10px 0 4px;
+                cursor: grab;
+                touch-action: none;
+            }
+
+            .sheet-handle-bar {
+                width: 36px;
+                height: 4px;
+                border-radius: 2px;
+                background: var(--border);
+            }
+
+            /* Collapsed state: sheet hidden, only handle peeks */
+            .sidebar.sheet-collapsed {
+                transform: translateY(calc(100% - 36px));
+            }
+
+            /* When sidebar has route-list visible, allow scrolling inside */
+            .sidebar .route-list {
+                max-height: 30vh;
+                overflow-y: auto;
+                flex-shrink: 0;
+            }
+
+            /* Burger menu still hidden — we don't need it anymore */
+            .menu-toggle {
+                display: none !important;
+            }
+
+            /* ── Form compact ──────────────────────────── */
             .stat-grid {
                 grid-template-columns: 1fr 1fr;
                 gap: 6px;
@@ -1128,24 +1394,12 @@
                 font-size: 11px;
             }
 
-            /* Map prend le reste de l'espace disponible */
-            .map-area {
-                min-height: calc(100vh - 180px);
-                flex: 1;
-            }
-
-            /* Quand la sidebar est ouverte, la carte reste visible */
-            .sidebar.mobile-open ~ .map-area {
-                min-height: calc(40vh - 60px);
-            }
-
-            /* Boutons plus gros pour le tactile */
+            /* Touch-friendly buttons */
             .btn {
                 padding: 12px 16px;
                 font-size: 15px;
             }
 
-            /* Inline fields en colonne sur mobile */
             .inline-fields {
                 flex-direction: column;
             }
@@ -1154,14 +1408,12 @@
                 width: 100%;
             }
 
-            /* Autocomplete dropdown adapté */
             .autocomplete-dropdown {
-                max-height: 200px;
+                max-height: 180px;
             }
 
-            /* Champs input/select adaptés mobile */
             select, input[type="text"], input[type="number"] {
-                font-size: 14px;
+                font-size: 16px;
                 padding: 10px 12px;
             }
 
@@ -1173,18 +1425,24 @@
                 font-size: 10px !important;
             }
 
-            /* Ajuster les placeholders sur mobile */
             #startAddress::placeholder {
                 font-size: 13px;
             }
 
-            /* Toast plus petit */
+            /* Toast above mobile nav */
             .toast {
-                bottom: 16px;
+                bottom: 110px;
                 right: 16px;
                 left: 16px;
                 max-width: none;
                 font-size: 13px;
+                z-index: 160;
+            }
+
+            /* Mobile nav sits above collapsed sheet */
+            .mobile-nav {
+                z-index: 15;
+                bottom: 40px;
             }
         }
 
@@ -1214,20 +1472,8 @@
 
         /* Très petits écrans (< 375px) */
         @media (max-width: 374px) {
-            header {
-                padding: 8px 12px;
-            }
-
-            header h1 {
-                font-size: 14px;
-            }
-
             .sidebar-section {
                 padding: 10px 12px;
-            }
-
-            .sidebar.mobile-open {
-                max-height: 55vh;
             }
 
             .stat-grid {
@@ -1239,9 +1485,8 @@
                 padding: 10px 14px;
             }
 
-            /* Champs encore plus compacts sur petits écrans */
             select, input[type="text"], input[type="number"] {
-                font-size: 13px;
+                font-size: 14px;
                 padding: 8px 10px;
             }
 
@@ -1252,10 +1497,6 @@
             .field small {
                 font-size: 9px !important;
                 line-height: 1.3;
-            }
-
-            #startAddress::placeholder {
-                font-size: 12px;
             }
 
             .route-item {
@@ -1280,10 +1521,6 @@
             .route-list {
                 max-height: 20vh;
             }
-
-            .map-area {
-                min-height: calc(100vh - 200px);
-            }
         }
     </style>
 </head>
@@ -1302,7 +1539,8 @@
 
     <div class="layout">
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
+            <div class="sheet-handle" id="sheetHandle"><div class="sheet-handle-bar"></div></div>
             <div class="sidebar-section">
                 <h2>Mode de recherche</h2>
 
@@ -1407,6 +1645,19 @@
                     </small>
                 </div>
 
+                <!-- Rayon de recherche (visible si point de départ renseigné) -->
+                <div class="field" id="radiusField" style="display:none;">
+                    <label for="radiusSelect">Rayon de recherche</label>
+                    <select id="radiusSelect">
+                        <option value="">Toute la zone</option>
+                        <option value="1">1 km</option>
+                        <option value="1.5">1,5 km</option>
+                        <option value="2">2 km</option>
+                        <option value="3" selected>3 km</option>
+                        <option value="5">5 km</option>
+                    </select>
+                </div>
+
                 <!-- Mode de transport -->
                 <div class="field">
                     <label>Mode de transport</label>
@@ -1466,6 +1717,16 @@
                         <div class="lbl">Orthos total</div>
                     </div>
                 </div>
+                <div style="display:flex;gap:8px;margin-top:10px;">
+                    <button class="btn btn-gmaps" style="flex:1;margin-top:0;" onclick="openGoogleMaps()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        Google Maps
+                    </button>
+                    <button class="btn btn-gmaps" style="flex:1;margin-top:0;" onclick="openWaze()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><circle cx="9" cy="10" r="1.5"/><circle cx="15" cy="10" r="1.5"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>
+                        Waze
+                    </button>
+                </div>
             </div>
 
             <!-- Route list with tabs -->
@@ -1479,6 +1740,10 @@
                     <div class="route-tab" data-tab="visited">
                         Visités
                         <span class="route-tab-badge" id="visitedCount">0</span>
+                    </div>
+                    <div class="route-tab" data-tab="printall">
+                        Lettres
+                        <span class="route-tab-badge" id="printallCount">0</span>
                     </div>
                 </div>
 
@@ -1495,6 +1760,24 @@
                                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             <p>Aucune visite validée pour le moment</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content: Lettres (print all) -->
+                <div class="route-content" id="printallContent">
+                    <div class="printall-header">
+                        <p class="printall-desc">Imprimer toutes les lettres personnalisées des praticiens à visiter.</p>
+                        <button class="printall-btn" id="printAllBtn" onclick="printAllLetters()">
+                            Imprimer toutes les lettres
+                        </button>
+                    </div>
+                    <div id="printallItems">
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                            </svg>
+                            <p>Aucun praticien à visiter</p>
                         </div>
                     </div>
                 </div>
@@ -1516,6 +1799,23 @@
                 <p id="loadingText">Calcul de l'itinéraire en cours…</p>
             </div>
         </main>
+    </div>
+
+    <!-- Mobile floating navigation panel -->
+    <div class="mobile-nav" id="mobileNav">
+        <div class="mobile-nav-inner">
+            <button class="mobile-nav-arrow" id="mobileNavPrev" onclick="mobileNavGo(-1)">&#8249;</button>
+            <div class="mobile-nav-info">
+                <div class="mobile-nav-top">
+                    <div class="mobile-nav-num" id="mobileNavNum"></div>
+                    <div class="mobile-nav-addr" id="mobileNavAddr"></div>
+                </div>
+                <div class="mobile-nav-names" id="mobileNavNames"></div>
+            </div>
+            <button class="mobile-nav-arrow" id="mobileNavNext" onclick="mobileNavGo(1)">&#8250;</button>
+            <button class="mobile-nav-validate" id="mobileNavBtn" onclick="mobileNavValidate()">Valider &#10003;</button>
+        </div>
+        <div class="mobile-nav-counter" id="mobileNavCounter"></div>
     </div>
 
     <!-- Error toast -->
@@ -1571,50 +1871,84 @@
         let selectedZoneIndex = -1;
         let selectedRadius = 5;  // default 5 km
 
-        // ── LocalStorage management ──────────────────────
-        function loadVisitedSites() {
+        // ── Visits API management (MongoDB) ──────────────
+        async function loadVisitedSites() {
             try {
-                const stored = localStorage.getItem('ortho_visited_sites_v2');
-                visitedSites = stored ? JSON.parse(stored) : [];
-                // Migration : supprimer l'ancien format (clés sans site_id fiable)
-                localStorage.removeItem('ortho_visited_sites');
+                const resp = await fetch('/api/visits');
+                if (!resp.ok) throw new Error('Erreur chargement visites');
+                const data = await resp.json();
+                visitedSites = data.map(v => ({
+                    site_id: v.site_id,
+                    label: v.label || '',
+                    lat: v.lat,
+                    lon: v.lon,
+                    visitedAt: v.visited_at,
+                    visitedDate: v.visited_at ? new Date(v.visited_at).toLocaleDateString('fr-FR') : '',
+                    visitedTime: v.visited_at ? new Date(v.visited_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
+                }));
             } catch (e) {
+                console.error('Failed to load visited sites', e);
                 visitedSites = [];
             }
         }
 
-        function saveVisitedSites() {
+        async function markAsVisited(siteData) {
+            if (!siteData.site_id || isSiteVisited(siteData.site_id)) return false;
+
             try {
-                localStorage.setItem('ortho_visited_sites_v2', JSON.stringify(visitedSites));
+                const resp = await fetch('/api/visits', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        site_id: siteData.site_id,
+                        label: siteData.label || '',
+                        lat: siteData.lat,
+                        lon: siteData.lon,
+                    }),
+                });
+                if (!resp.ok) {
+                    const errData = await resp.json().catch(() => ({}));
+                    throw new Error(errData.error || `Erreur serveur (${resp.status})`);
+                }
+
+                const doc = await resp.json();
+
+                // Ajouter localement pour mise à jour immédiate de l'UI
+                visitedSites.unshift({
+                    site_id: doc.site_id,
+                    label: doc.label || siteData.label || '',
+                    orthos: siteData.orthos || 0,
+                    orthos_list: siteData.orthos_list || [],
+                    lat: doc.lat,
+                    lon: doc.lon,
+                    visitedAt: doc.visited_at,
+                    visitedDate: new Date(doc.visited_at).toLocaleDateString('fr-FR'),
+                    visitedTime: new Date(doc.visited_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+                });
             } catch (e) {
-                console.error('Failed to save visited sites', e);
+                console.error('Failed to mark visited', e);
+                showToast('Erreur : ' + e.message);
+                return false;
             }
-        }
 
-        function markAsVisited(siteData) {
-            // Ne pas ajouter si déjà visité (éviter les doublons)
-            if (!siteData.site_id || isSiteVisited(siteData.site_id)) return;
-
-            const visitData = {
-                site_id: siteData.site_id,
-                label: siteData.label || '',
-                orthos: siteData.orthos || 0,
-                orthos_list: siteData.orthos_list || [],
-                lat: siteData.lat,
-                lon: siteData.lon,
-                visitedAt: new Date().toISOString(),
-                visitedDate: new Date().toLocaleDateString('fr-FR'),
-                visitedTime: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-            };
-            visitedSites.unshift(visitData);
-            saveVisitedSites();
             updateVisitedList();
             updateTabCounts();
+            return true;
         }
 
-        function unmarkAsVisited(siteId) {
+        async function unmarkAsVisited(siteId) {
+            try {
+                const resp = await fetch(`/api/visits/${encodeURIComponent(siteId)}`, {
+                    method: 'DELETE',
+                });
+                if (!resp.ok) throw new Error('Erreur serveur');
+            } catch (e) {
+                console.error('Failed to unmark visited', e);
+                showToast('Erreur : impossible de supprimer la visite');
+                return;
+            }
+
             visitedSites = visitedSites.filter(v => v.site_id !== siteId);
-            saveVisitedSites();
             updateVisitedList();
             updateTabCounts();
             refreshRouteDisplay();
@@ -1648,6 +1982,14 @@
 
             document.getElementById('tovisitCount').textContent = toVisitCount;
             document.getElementById('visitedCount').textContent = visitedCount;
+
+            // Count total orthos for print tab
+            const orthosCount = getAllOrthosToVisit().length;
+            document.getElementById('printallCount').textContent = orthosCount;
+            updatePrintallList();
+
+            // Update mobile floating nav
+            updateMobileNav();
         }
 
         function updateVisitedList() {
@@ -1802,6 +2144,12 @@
         });
 
         cityInput.addEventListener('focus', (e) => {
+            // On mobile, scroll sidebar so the input + dropdown are visible
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 300);
+            }
             const query = e.target.value.trim();
             if (query) {
                 const filtered = filterCities(query);
@@ -1874,6 +2222,7 @@
             // Show loading
             generateBtn.disabled = true;
             loadingOverlay.classList.add('visible');
+            collapseSheet();
             routeStats.classList.remove('visible');
             routeList.classList.remove('visible');
 
@@ -1928,11 +2277,16 @@
                     transport_mode: transportMode,
                 };
 
-                // Ajouter point de depart et rayon si definis
+                // Ajouter point de départ et rayon si définis
                 if (startPoint) {
                     body.start_lat = startPoint.lat;
                     body.start_lon = startPoint.lon;
                     body.start_address = startPoint.address;
+
+                    const radiusVal = document.getElementById('radiusSelect').value;
+                    if (radiusVal) {
+                        body.radius_km = parseFloat(radiusVal);
+                    }
                 }
 
                 if (isZoneMode) {
@@ -2065,10 +2419,11 @@
         }
 
         // ── Validate visit ───────────────────────────────
-        function validateVisit(routeIndex) {
+        async function validateVisit(routeIndex) {
             if (routeIndex >= 0 && routeIndex < currentRoute.length) {
                 const site = currentRoute[routeIndex];
-                markAsVisited(site);
+                const ok = await markAsVisited(site);
+                if (!ok) return;
                 showToast(`✓ Visite validée : ${site.label || site.address}`);
 
                 // Refresh the route display to update the UI
@@ -2310,22 +2665,53 @@
             });
         });
 
-        // ── Mobile menu toggle ──────────────────────────
-        const menuToggle = document.getElementById('menuToggle');
-        const sidebar = document.querySelector('.sidebar');
+        // ── Mobile bottom sheet ──────────────────────────
+        const sidebar = document.getElementById('sidebar');
+        const sheetHandle = document.getElementById('sheetHandle');
 
-        if (menuToggle) {
-            menuToggle.addEventListener('click', () => {
-                sidebar.classList.toggle('mobile-open');
-            });
-
-            // Close menu when generating route on mobile
-            generateBtn.addEventListener('click', () => {
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.remove('mobile-open');
-                }
-            });
+        function collapseSheet() {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.add('sheet-collapsed');
+            }
         }
+
+        function expandSheet() {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('sheet-collapsed');
+            }
+        }
+
+        function toggleSheet() {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('sheet-collapsed');
+            }
+        }
+
+        // Tap handle to toggle
+        if (sheetHandle) {
+            sheetHandle.addEventListener('click', toggleSheet);
+        }
+
+        // Tap on map (outside sidebar) to collapse the sheet
+        document.getElementById('mapArea').addEventListener('click', () => {
+            if (window.innerWidth <= 768 && !sidebar.classList.contains('sheet-collapsed')) {
+                collapseSheet();
+            }
+        });
+
+        // Collapse sheet when route is generated on mobile
+        generateBtn.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                // Delay collapse until after route loads
+                const observer = new MutationObserver(() => {
+                    if (document.querySelector('.map-area iframe')) {
+                        collapseSheet();
+                        observer.disconnect();
+                    }
+                });
+                observer.observe(document.querySelector('.map-area'), { childList: true });
+            }
+        });
 
         // ── Responsive placeholders ──────────────────────
         function updatePlaceholders() {
@@ -2350,6 +2736,245 @@
         // Update on load and resize
         updatePlaceholders();
         window.addEventListener('resize', updatePlaceholders);
+
+        // ── Show/hide radius field based on start address ───
+        const startAddressField = document.getElementById('startAddress');
+        const radiusField = document.getElementById('radiusField');
+
+        startAddressField.addEventListener('input', () => {
+            radiusField.style.display = startAddressField.value.trim() ? 'block' : 'none';
+        });
+
+        // ── Google Maps ──────────────────────────────────
+        function openGoogleMaps() {
+            const stops = currentRoute.filter(r => !isSiteVisited(r.site_id));
+            if (stops.length === 0) return;
+
+            // Google Maps URL: /dir/lat,lng/lat,lng/...
+            // Limit to ~25 waypoints (Google Maps URL limit)
+            const points = stops.slice(0, 25);
+            const path = points.map(s => `${s.lat},${s.lon}`).join('/');
+            const mode = transportMode === 'foot' ? 'walking' : 'driving';
+
+            const url = `https://www.google.com/maps/dir/${path}/?travelmode=${mode}`;
+            window.open(url, '_blank');
+        }
+
+        function openWaze() {
+            const stops = currentRoute.filter(r => !isSiteVisited(r.site_id));
+            if (stops.length === 0) return;
+
+            // Waze ne supporte qu'une seule destination à la fois
+            // On ouvre le premier stop non visité
+            const next = stops[0];
+            const url = `https://waze.com/ul?ll=${next.lat},${next.lon}&navigate=yes`;
+            window.open(url, '_blank');
+        }
+
+        // ── Print all letters ────────────────────────────
+        function getAllOrthosToVisit() {
+            const orthos = [];
+            currentRoute.forEach(r => {
+                if (isSiteVisited(r.site_id)) return;
+                if (r.orthos_list && r.orthos_list.length > 0) {
+                    r.orthos_list.forEach(o => {
+                        orthos.push({
+                            ...o,
+                            address: r.label,
+                            organization_address_line: r.address || r.label,
+                            organization_postal_code: r.postal_code,
+                            organization_city: r.city,
+                            _order: r.order
+                        });
+                    });
+                }
+            });
+            return orthos;
+        }
+
+        function updatePrintallList() {
+            const container = document.getElementById('printallItems');
+            const orthos = getAllOrthosToVisit();
+
+            if (orthos.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                        </svg>
+                        <p>Aucun praticien à visiter</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+            orthos.forEach((o, i) => {
+                const name = `${o.given_names || ''} ${o.family_name || ''}`.trim();
+                const addr = `${o.organization_postal_code || ''} ${o.organization_city || ''}`.trim();
+                const div = document.createElement('div');
+                div.className = 'printall-item';
+                div.innerHTML = `
+                    <div class="printall-order">${i + 1}</div>
+                    <div class="printall-info">
+                        <div class="printall-name">${name || 'Orthophoniste'}</div>
+                        <div class="printall-addr">${addr || '—'}</div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function openLetterPrintWindow(pagesHtml) {
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            if (!printWindow) return;
+
+            printWindow.document.write(`<!DOCTYPE html>
+<html><head>
+<title> </title>
+<style>
+    @page {
+        size: A4;
+        margin: 0;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        background: white;
+        color: #000;
+        font-family: 'Georgia', 'Times New Roman', serif;
+        font-size: 10pt;
+        line-height: 1.5;
+    }
+
+    /* Each letter = exactly one A4 page */
+    .letter-page {
+        width: 210mm;
+        min-height: 297mm;
+        padding: 22mm 25mm 18mm 25mm;
+        display: flex;
+        flex-direction: column;
+        page-break-after: always;
+    }
+    .letter-page:last-child {
+        page-break-after: auto;
+    }
+
+    /* Recipient block — top right, like a French formal letter */
+    .letter-to {
+        text-align: right;
+        margin-bottom: 14px;
+    }
+    .letter-to-name {
+        font-weight: bold;
+        font-size: 10.5pt;
+    }
+    .letter-to-address {
+        font-size: 9.5pt;
+        color: #333;
+        margin-top: 2px;
+        line-height: 1.4;
+    }
+
+    /* Date — right aligned */
+    .letter-date {
+        text-align: right;
+        margin-bottom: 14px;
+        font-size: 9.5pt;
+        font-style: italic;
+        color: #555;
+    }
+
+    /* Subject */
+    .letter-subject {
+        font-weight: bold;
+        margin-bottom: 14px;
+        font-size: 10pt;
+    }
+
+    /* Body — grows to fill the page, pushing signature down */
+    .letter-body {
+        flex: 1;
+    }
+    .letter-body p {
+        margin-bottom: 7px;
+    }
+    .letter-body ul {
+        margin-left: 20px;
+        margin-bottom: 7px;
+    }
+    .letter-body li {
+        margin-bottom: 2px;
+    }
+
+    /* QR section */
+    .letter-qr-section {
+        margin: 10px 0 6px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background: #f7f8fa;
+        text-align: center;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .letter-qr-label {
+        font-size: 9pt;
+        margin-bottom: 6px;
+        color: #333;
+    }
+    .letter-qr-image {
+        width: 90px;
+        height: 90px;
+        display: block;
+        margin: 0 auto 4px;
+    }
+    .letter-qr-link {
+        font-size: 9pt;
+        color: #334155;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    /* Signature — stays at bottom thanks to flex */
+    .letter-signature {
+        margin-top: 12px;
+    }
+    .letter-signature p {
+        margin-bottom: 1px;
+        font-size: 9.5pt;
+    }
+
+    /* PS */
+    .letter-ps {
+        margin-top: 10px;
+        font-size: 9pt;
+        font-style: italic;
+        color: #444;
+    }
+</style>
+</head><body>${pagesHtml}</body></html>`);
+            printWindow.document.close();
+
+            // Wait for images (QR code) to load, then print
+            printWindow.onload = () => {
+                printWindow.focus();
+                printWindow.print();
+                printWindow.close();
+            };
+        }
+
+        function printAllLetters() {
+            const orthos = getAllOrthosToVisit();
+            if (orthos.length === 0) return;
+
+            // Build all letters HTML
+            let pagesHtml = '';
+            orthos.forEach(o => {
+                pagesHtml += `<div class="letter-page">${generateLetterContent(o)}</div>`;
+            });
+
+            openLetterPrintWindow(pagesHtml);
+        }
 
         // ── Letter Modal Management ──────────────────────
         function generateLetterContent(orthoData) {
@@ -2392,7 +3017,6 @@
                 <div class="letter-date">
                     Paris, le ${today}
                 </div>
-
                 <div class="letter-subject">
                     Objet : Recherche de collaboration — plateforme pour orthophonistes
                 </div>
@@ -2402,65 +3026,55 @@
 
                     <p>
                         Je m'appelle Nathan Krief, j'ai 22 ans et je suis étudiant-entrepreneur.
-                        Je développe <strong>Logesia</strong>, une plateforme numérique pensée pour
-                        simplifier le quotidien des orthophonistes.
+                        Je développe <strong>Logesia</strong>, une plateforme numérique conçue pour
+                        libérer du temps clinique aux orthophonistes en réduisant la charge administrative.
                     </p>
 
                     <p><strong>Pourquoi je vous écris personnellement ?</strong></p>
 
                     <p>
-                        Plus jeune, j'ai moi-même été suivi en orthophonie. Ma meilleure amie est
-                        orthophoniste. En échangeant avec elle, j'ai réalisé à quel point le métier
-                        est envahi par des tâches administratives qui empiètent sur le temps clinique.
-                        J'ai voulu créer un outil qui change cela.
+                        En échangeant avec plusieurs orthophonistes, j'ai réalisé à quel point
+                        le métier consacre un temps considérable à l'administratif au détriment du
+                        temps passé avec les patients. C'est ce constat qui m'a donné envie de créer
+                        un outil pour rééquilibrer cela.
                     </p>
 
-                    <p><strong>Logesia permet concrètement de :</strong></p>
+                    <p><strong>Concrètement, Logesia vous permet de :</strong></p>
                     <ul style="margin-left: 20px; margin-bottom: 15px;">
-                        <li>gagner du temps sur les comptes rendus et la documentation clinique ;</li>
+                        <li>réduire le temps passé sur les comptes rendus et la documentation clinique ;</li>
                         <li>générer des exercices personnalisés, adaptés à chaque patient et à ses progrès ;</li>
                         <li>structurer le suivi thérapeutique avec une trame adaptative, séance après séance.</li>
                     </ul>
-
                     <p>
-                        Le tout est assisté par intelligence artificielle, mais toujours sous votre
-                        contrôle : c'est vous le professionnel, l'outil vous assiste. Et ce n'est
-                        qu'un début : de nombreuses fonctionnalités sont en cours de développement
-                        pour aller encore plus loin.
+                        L'ensemble est assisté par intelligence artificielle, mais vous gardez le
+                        contrôle à chaque étape : c'est vous qui décidez, l'outil s'adapte à votre
+                        pratique. Et ce n'est qu'un début, de nombreuses fonctionnalités sont en
+                        cours de développement.
                     </p>
-
                     <p><strong>Ce que je recherche, ce n'est pas un client, mais un regard d'expert.</strong></p>
-
                     <p>
-                        La plateforme existe et fonctionne, mais j'ai besoin de professionnels de
-                        terrain pour me dire ce qui manque, ce qui ne va pas et ce qu'il faut améliorer.
+                        La plateforme existe et fonctionne. Mais pour qu'elle soit vraiment utile au
+                        quotidien, j'ai besoin de professionnels de terrain : vos retours et vos
+                        suggestions sont essentiels pour que l'outil colle vraiment à la réalité du terrain.
                         Concrètement, je cherche des orthophonistes prêts à tester Logesia et à me
-                        faire leurs retours, même sévères.
+                        faire part de leurs observations, même les plus critiques.
+                        Bien entendu, l'accès à la plateforme sera entièrement gratuit pour vous.
                     </p>
-
-                    <p>
-                        En échange, je vous offre un <strong>accès gratuit pendant 1 an</strong> à
-                        l'ensemble de la plateforme.
-                    </p>
-
                     <p>
                         Si vous êtes ${curieux}, scannez le QR code ci-dessous pour découvrir Logesia,
                         ou contactez-moi directement :
                     </p>
-
                     <div class="letter-qr-section">
                         <div class="letter-qr-label">Scannez ce QR code pour découvrir Logesia :</div>
                         <img class="letter-qr-image" src="/qr-code.svg" alt="QR code vers Logesia">
                         <a class="letter-qr-link" href="https://logesia.com" target="_blank" rel="noopener noreferrer">logesia.com</a>
                     </div>
                 </div>
-
                 <div class="letter-signature">
                     <p><strong>Nathan Krief</strong></p>
                     <p>06 29 40 04 23</p>
                     <p>nathan@logesia.com</p>
                 </div>
-
                 <div class="letter-ps">
                     <p>
                         <strong>P.S. :</strong> Je serais également ravi de vous rencontrer autour
@@ -2488,7 +3102,11 @@
         }
 
         function printLetter() {
-            window.print();
+            const letterDocument = document.getElementById('letterDocument');
+            if (!letterDocument || !letterDocument.innerHTML.trim()) return;
+
+            const pagesHtml = `<div class="letter-page">${letterDocument.innerHTML}</div>`;
+            openLetterPrintWindow(pagesHtml);
         }
 
         // Close modal when clicking outside
@@ -2505,11 +3123,100 @@
             }
         });
 
+        // ── Mobile floating nav ─────────────────────────
+        let mobileNavIndex = 0;
+
+        function isMobile() {
+            return window.innerWidth <= 768;
+        }
+
+        function getUnvisitedStops() {
+            return currentRoute
+                .map((r, i) => ({ ...r, _routeIndex: i }))
+                .filter(r => !isSiteVisited(r.site_id));
+        }
+
+        function updateMobileNav() {
+            const nav = document.getElementById('mobileNav');
+            if (!isMobile() || currentRoute.length === 0) {
+                nav.classList.remove('visible');
+                return;
+            }
+
+            const stops = getUnvisitedStops();
+            if (stops.length === 0) {
+                nav.classList.remove('visible');
+                return;
+            }
+
+            if (mobileNavIndex >= stops.length) mobileNavIndex = stops.length - 1;
+            if (mobileNavIndex < 0) mobileNavIndex = 0;
+
+            const stop = stops[mobileNavIndex];
+            const n = currentRoute.length;
+
+            // Num badge
+            const numEl = document.getElementById('mobileNavNum');
+            numEl.textContent = stop.order;
+            numEl.className = 'mobile-nav-num';
+            if (stop._routeIndex === 0) numEl.classList.add('start');
+            else if (stop._routeIndex === n - 1) numEl.classList.add('end');
+
+            // Address
+            document.getElementById('mobileNavAddr').textContent = stop.label || '—';
+
+            // Names
+            let names = '';
+            if (stop.orthos_list && stop.orthos_list.length > 0) {
+                names = stop.orthos_list.map(o =>
+                    `${o.given_names || ''} ${o.family_name || ''}`.trim()
+                ).join(', ');
+            }
+            document.getElementById('mobileNavNames').textContent = names;
+
+            // Counter
+            document.getElementById('mobileNavCounter').textContent =
+                `${mobileNavIndex + 1} / ${stops.length} restant${stops.length > 1 ? 's' : ''}`;
+
+            // Arrows
+            document.getElementById('mobileNavPrev').disabled = mobileNavIndex === 0;
+            document.getElementById('mobileNavNext').disabled = mobileNavIndex >= stops.length - 1;
+
+            // Show
+            nav.classList.add('visible');
+        }
+
+        function mobileNavGo(delta) {
+            const stops = getUnvisitedStops();
+            mobileNavIndex += delta;
+            if (mobileNavIndex < 0) mobileNavIndex = 0;
+            if (mobileNavIndex >= stops.length) mobileNavIndex = stops.length - 1;
+            updateMobileNav();
+        }
+
+        async function mobileNavValidate() {
+            const stops = getUnvisitedStops();
+            if (stops.length === 0) return;
+
+            const stop = stops[mobileNavIndex];
+            const ok = await markAsVisited(stop);
+            if (!ok) return;
+            showToast(`Visite validee : ${stop.label || ''}`);
+            refreshRouteDisplay();
+            updateMobileNav();
+        }
+
+        // Update on resize
+        window.addEventListener('resize', updateMobileNav);
+
         // ── Init ─────────────────────────────────────────
-        loadVisitedSites();
-        initTabs();
-        updateVisitedList();
-        loadCities();
+        async function init() {
+            await loadVisitedSites();
+            initTabs();
+            updateVisitedList();
+            loadCities();
+        }
+        init();
     </script>
 </body>
 </html>
