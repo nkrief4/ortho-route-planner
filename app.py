@@ -299,22 +299,24 @@ def api_geocode():
 @app.route("/api/generate", methods=["POST"])
 def api_generate():
     """
-    Génère le shortest path pour une ville ou un code postal.
+    Génère le shortest path pour une ville ou un code postal, ou par zone (rayon).
     Body JSON : {
-        "city": "PARIS",
-        "dept": "75015",
+        "search_mode": "city" | "zone",       # Mode de recherche
+        "city": "PARIS",                       # Mode city : ville
+        "dept": "75015",                       # Mode city : code postal
         "closed_loop": false,
         "tsp_limit": 30,
-        "start_address": "15 Avenue des Champs-Élysées, Paris",  # NOUVEAU
-        "start_lat": 48.8698,                                      # NOUVEAU (pré-géocodé)
-        "start_lon": 2.3078,                                       # NOUVEAU
-        "radius_km": 5                                             # NOUVEAU (rayon en km)
+        "start_address": "15 Avenue des Champs-Élysées, Paris",
+        "start_lat": 48.8698,                  # Pré-géocodé
+        "start_lon": 2.3078,                   # Pré-géocodé
+        "radius_km": 5                         # Mode zone : rayon en km
     }
     """
     if not _data["ready"]:
         return jsonify({"error": "Données pas encore chargées"}), 503
 
     body = request.get_json(force=True)
+    search_mode = body.get("search_mode", "city")
     city_filter = (body.get("city") or "").strip().upper()
     dept_filter = (body.get("dept") or "").strip()
     closed_loop = body.get("closed_loop", False)
@@ -327,12 +329,41 @@ def api_generate():
     start_lat = body.get("start_lat")
     start_lon = body.get("start_lon")
     start_address = body.get("start_address", "")
-    radius_km = body.get("radius_km")
+    radius_km = float(body.get("radius_km", 5))
+    total_in_zone = 0
 
     df_sites = _data["df_sites"].copy()
 
     # ── Filtrage ──────────────────────────────────────────────────────
-    if dept_filter:
+    if search_mode == "zone":
+        # Mode zone : filtrer par rayon autour du point de départ
+        if start_lat is None or start_lon is None:
+            return jsonify({"error": "Le mode zone nécessite un point de départ géocodé"}), 400
+
+        # Ne garder que les sites géocodés pour le calcul de distance
+        df_sites = df_sites[
+            df_sites["latitude"].notna() & df_sites["longitude"].notna()
+        ].copy()
+
+        # Calculer la distance de chaque site au point de départ
+        df_sites["distance_km"] = df_sites.apply(
+            lambda row: haversine_distance(start_lat, start_lon, row["latitude"], row["longitude"]),
+            axis=1,
+        )
+
+        # Filtrer par rayon
+        df_sites = df_sites[df_sites["distance_km"] <= radius_km].copy()
+
+        # Si trop de sites, garder les plus proches (max 300)
+        total_in_zone = len(df_sites)  # sauvegarder avant troncature
+        MAX_ZONE_SITES = 300
+        if total_in_zone > MAX_ZONE_SITES:
+            df_sites = df_sites.nsmallest(MAX_ZONE_SITES, "distance_km").copy()
+            print(f"  [zone] {total_in_zone} sites dans le rayon, limité aux {MAX_ZONE_SITES} plus proches")
+        else:
+            print(f"  [zone] {total_in_zone} sites dans un rayon de {radius_km} km")
+
+    elif dept_filter:
         mask = df_sites["postal_code_clean"].str.startswith(dept_filter)
         df_sites = df_sites[mask].copy()
     elif city_filter:
@@ -350,19 +381,6 @@ def api_generate():
         & df_sites["latitude"].notna()
         & df_sites["longitude"].notna()
     ].copy().reset_index(drop=True)
-
-    # ── Filtrage par rayon autour du point de départ ──────────────────
-    if radius_km and start_lat is not None and start_lon is not None:
-        radius_km = float(radius_km)
-        df_routable["_dist_km"] = df_routable.apply(
-            lambda r: haversine_distance(start_lat, start_lon, r["latitude"], r["longitude"]),
-            axis=1,
-        )
-        n_before = len(df_routable)
-        df_routable = df_routable[df_routable["_dist_km"] <= radius_km].copy()
-        df_routable.drop(columns=["_dist_km"], inplace=True)
-        df_routable.reset_index(drop=True, inplace=True)
-        print(f"  [route] Filtre rayon {radius_km} km : {n_before} → {len(df_routable)} sites")
 
     # ── Exclure les sites déjà visités du TSP ───────────────────────
     from pipeline.db import get_all_visits
@@ -404,12 +422,17 @@ def api_generate():
         })
 
     if n_routable > 300:
-        return jsonify({
-            "error": (
-                f"Trop de sites ({n_routable}) pour le calcul en temps réel. "
-                f"Filtrez par arrondissement/code postal."
-            ),
-        }), 400
+        if search_mode == "zone":
+            # En mode zone, on tronque aux 300 plus proches (ne devrait pas arriver)
+            df_routable = df_routable.head(300).copy()
+            n_routable = len(df_routable)
+        else:
+            return jsonify({
+                "error": (
+                    f"Trop de sites ({n_routable}) pour le calcul en temps réel. "
+                    f"Filtrez par arrondissement/code postal."
+                ),
+            }), 400
 
     # ── Phase 6 : Matrice OSRM ────────────────────────────────────────
     from pipeline.routing import (
@@ -535,19 +558,31 @@ def api_generate():
     total_min = total_duration / 60
     total_h = total_duration / 3600
 
+    stats = {
+        "total_sites": len(df_sites),
+        "routable_sites": n_routable,
+        "visited_sites": len(route_order),
+        "total_duration_min": round(total_min, 1),
+        "total_duration_h": round(total_h, 2),
+        "avg_segment_min": round(total_min / max(len(route_order) - 1, 1), 1),
+        "closed_loop": closed_loop,
+        "transport_mode": transport_mode,
+        "search_mode": search_mode,
+    }
+
+    if search_mode == "zone":
+        stats["radius_km"] = radius_km
+        stats["total_in_zone"] = total_in_zone
+        if total_in_zone > n_routable:
+            stats["message"] = (
+                f"{total_in_zone} sites dans le rayon de {radius_km} km, "
+                f"itinéraire calculé sur les {n_routable} plus proches."
+            )
+
     return jsonify({
         "map_html": map_html,
         "route": route_list,
-        "stats": {
-            "total_sites": len(df_sites),
-            "routable_sites": n_routable,
-            "visited_sites": len(route_order),
-            "total_duration_min": round(total_min, 1),
-            "total_duration_h": round(total_h, 2),
-            "avg_segment_min": round(total_min / max(len(route_order) - 1, 1), 1),
-            "closed_loop": closed_loop,
-            "transport_mode": transport_mode,
-        },
+        "stats": stats,
     })
 
 
