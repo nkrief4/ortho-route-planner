@@ -46,7 +46,7 @@ def _save_cache(cache: dict, cache_path: Path) -> None:
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = cache_path.with_suffix(".tmp")
     with tmp.open("w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False)
+        json.dump(cache, f, ensure_ascii=False, indent=4)  # indenté : diffs git lisibles
     tmp.replace(cache_path)
 
 
@@ -176,10 +176,12 @@ def geocode_one(
 def geocode_sites(
     df_sites: pd.DataFrame,
     cache_dir: Path | str | None = None,
+    cache_only: bool = False,
 ) -> pd.DataFrame:
     """
     Géocode chaque site de df_sites.
     Utilise un cache JSON pour éviter de re-géocoder.
+    Avec cache_only=True, aucun appel API : les sites absents du cache sont PENDING.
     Ajoute les colonnes : geocoded_label, latitude, longitude, score, status.
     """
     cache_path = Path(cache_dir or CACHE_DIR) / "geocode_cache.json"
@@ -189,6 +191,7 @@ def geocode_sites(
     n = len(df_sites)
     new_count = 0
     cached_count = 0
+    pending_count = 0
     errors = 0
 
     for i, (_, row) in enumerate(df_sites.iterrows()):
@@ -197,6 +200,15 @@ def geocode_sites(
         if key in cache:
             results.append(cache[key])
             cached_count += 1
+        elif cache_only:
+            results.append({
+                "geocoded_label": "",
+                "latitude": None,
+                "longitude": None,
+                "score": 0.0,
+                "status": "PENDING",
+            })
+            pending_count += 1
         else:
             try:
                 result = geocode_one(
@@ -230,7 +242,7 @@ def geocode_sites(
         if done % 500 == 0 or done == n:
             print(
                 f"    [{done}/{n}]  cache={cached_count}  "
-                f"new={new_count}  erreurs={errors}",
+                f"new={new_count}  pending={pending_count}  erreurs={errors}",
             )
 
     if new_count > 0:

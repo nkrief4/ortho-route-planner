@@ -6,8 +6,9 @@ Extraction, nettoyage, geocodage et optimisation de tournees pour les orthophoni
 
 ```
 ortho-route-planner/
-├── scraping/                         # 1. Extraction des donnees depuis l'API eSante
-│   ├── main.py                       #    Pipeline complet : extraction brute + enrichissement
+├── scraping/                         # 1. Extraction des donnees Annuaire Sante (ANS)
+│   ├── import_open_data.py           #    Mise a jour depuis l'open data data.gouv.fr (recommande)
+│   ├── main.py                       #    Extraction via l'API FHIR (cle ESANTE_API_KEY)
 │   ├── check_api.py                  #    Test de connectivite API
 │   ├── extract_contact_columns.py    #    Export CSV simplifie (colonnes contacts)
 │   ├── env_utils.py                  #    Chargement du fichier .env
@@ -95,8 +96,23 @@ les commandes de ce README.
 
 | Variable | Utilisee par | Obligatoire ? |
 |----------|--------------|---------------|
-| `ESANTE_API_KEY` | `scraping/` (extraction RPPS) | Seulement pour relancer l'extraction |
+| `ESANTE_API_KEY` | `scraping/main.py` (extraction via l'API FHIR) | Non : `scraping/import_open_data.py` n'en a pas besoin |
 | `MONGODB_URI` | `app.py` (suivi des sites visites) | Non : sans elle, l'interface fonctionne mais le marquage « visite » renvoie une erreur |
+| `CARTO_API_KEY` | `pipeline/mapping.py` (fond de carte clair CARTO) | Non : sans elle, la carte utilise les tuiles OpenStreetMap |
+
+#### Obtenir une cle CARTO (gratuite)
+
+Depuis 2026, les tuiles CARTO (« CartoDB positron ») affichent « API KEY REQUIRED »
+sans cle. Pour retrouver ce fond de carte :
+
+1. Aller sur <https://carto.com/basemaps/apikey>, saisir son e-mail et cliquer sur le
+   lien de connexion recu (pas de mot de passe).
+2. Creer une cle dans le tableau de bord. Offre gratuite : 1 million de tuiles par
+   mois en usage commercial, 5 millions en usage non commercial.
+3. Restreindre la cle aux domaines du site (ex: `localhost`, `*.onrender.com`) : elle
+   est visible dans le code de la page.
+4. L'ajouter dans `.env` (`CARTO_API_KEY=...`) et dans les variables d'environnement
+   du service Render.
 
 Les donnees necessaires a l'interface web (`data/enriched/contacts_orthophonistes_basic.csv`
 et `output/cache/geocode_cache.json`) sont deja dans le depot : pas besoin de lancer
@@ -104,34 +120,46 @@ le scraping pour travailler en local.
 
 ## 1. Extraction des donnees (scraping/)
 
-### Tester la connexion API
+Les orthophonistes (code profession 91) viennent de l'**Annuaire Sante** de l'Agence du
+Numerique en Sante (ANS), alimente par le RPPS. Deux sources sont possibles.
+
+### Mettre a jour la base (recommande : open data, sans cle)
+
+L'ANS publie deux extractions sur data.gouv.fr, mises a jour regulierement :
+
+- [Annuaire Sante - Extractions des donnees en libre acces (Format Zip)](https://www.data.gouv.fr/datasets/annuaire-sante-extractions-des-donnees-en-libre-acces-des-professionnels-intervenant-dans-le-systeme-de-sante-rpps-format-zip) :
+  professionnels, lieux d'exercice, telephone et email du cabinet (~230 Mo).
+- [Annuaire Sante - Extraction des BAL MSSante (Format Zip)](https://www.data.gouv.fr/datasets/annuaire-sante-extraction-des-bal-mssante-format-zip) :
+  adresses de messagerie securisee MSSante (~22 Mo), rattachees par numero RPPS.
 
 ```bash
-venv/bin/python scraping/check_api.py
+# Telecharge les dernieres extractions (dans data/raw/) et regenere
+# data/enriched/contacts_orthophonistes_basic.csv
+venv/bin/python scraping/import_open_data.py
+
+# Puis lancer l'app une fois en local : au demarrage, les adresses absentes du cache
+# sont geocodees (~45 min pour 4 000 nouvelles adresses) et ajoutees au cache
+venv/bin/python app.py --port 5001
 ```
 
-### Extraire les orthophonistes
+Versionner ensuite `data/enriched/contacts_orthophonistes_basic.csv` et
+`output/cache/geocode_cache.json` : sur Render, toutes les adresses sont alors deja dans
+le cache et le demarrage reste rapide.
 
-```bash
-# Mode interactif (affiche les codes, demande la saisie)
-venv/bin/python scraping/main.py
+Le script reconstruit les adresses au meme format que l'API FHIR, ce qui permet de
+reutiliser le cache de geocodage existant.
 
-# Code specifique (91 = orthophonistes)
-venv/bin/python scraping/main.py --code 91 --resume
+### Liens utiles (Annuaire Sante / API FHIR)
 
-# Enrichissement seul (si le brut existe deja)
-venv/bin/python scraping/main.py --code 91 --resume --enrich-only
-```
+- Guide d'implementation FHIR de l'Annuaire Sante : <https://interop.esante.gouv.fr/ig/fhir/annuaire/>
+- Documentation de l'API FHIR : <https://ansforge.github.io/annuaire-sante-fhir-documentation/>
+- Etat des services eSante (pannes, maintenances) : <https://status.esante.gouv.fr/>
+- Code source du serveur FHIR : <https://github.com/ansforge/annuaire-sante-fhir-serveur>
+- Signaler un probleme ou poser une question : <https://github.com/ansforge/annuaire-sante-fhir-documentation/issues>
 
-### Exporter un CSV simplifie
+### Extraction via l'API FHIR (cle ESANTE_API_KEY)
 
-```bash
-venv/bin/python scraping/extract_contact_columns.py
-```
-
-### Mettre a jour toutes les donnees
-
-Les donnees viennent de l'API Annuaire Sante de l'ANS (FHIR) :
+Alternative plus lente a l'open data. Les donnees viennent de deux requetes :
 
 1. `Practitioner?qualification-code=91` : la liste des orthophonistes (nom, RPPS, MSSante).
 2. Pour chacun, `PractitionerRole?practitioner=<id>&active=true&_include=PractitionerRole:organization` :
@@ -148,10 +176,25 @@ caffeinate -i venv/bin/python scraping/main.py --code 91 --resume  # macOS : emp
 cp data/enriched/contacts_orthophoniste_91.csv data/enriched/contacts_orthophonistes_basic.csv
 ```
 
-Puis geocoder les nouvelles adresses en lancant `venv/bin/python app.py` une fois
-(le cache `output/cache/geocode_cache.json` est complete), et versionner les deux
-fichiers (`contacts_orthophonistes_basic.csv` et `geocode_cache.json`). Sans le cache
-a jour, le site en ligne geocoderait les nouvelles adresses a chaque demarrage.
+Puis geocoder les nouvelles adresses et versionner les deux fichiers, comme apres une
+mise a jour open data (voir plus haut). Sans le cache a jour, le site en ligne
+geocoderait les nouvelles adresses a chaque demarrage.
+
+Autres options de `scraping/main.py` :
+
+```bash
+# Mode interactif (affiche les codes, demande la saisie)
+venv/bin/python scraping/main.py
+
+# Enrichissement seul (si le brut existe deja)
+venv/bin/python scraping/main.py --code 91 --resume --enrich-only
+```
+
+#### Exporter un CSV simplifie
+
+```bash
+venv/bin/python scraping/extract_contact_columns.py
+```
 
 ## 2. Interface Web (app.py)
 
@@ -168,8 +211,9 @@ Le démarrage prend quelques secondes : toutes les adresses sont déjà dans
 `output/cache/geocode_cache.json`, donc aucune requête de géocodage n'est faite.
 Seules les adresses absentes du cache sont envoyées à l'API.
 
-> L'option `--skip-geocode` est inutile : elle n'a actuellement aucun effet, et le
-> cache rend déjà le démarrage rapide.
+> `--skip-geocode` démarre avec le cache seul, sans aucune requête de géocodage :
+> utile juste après une mise à jour des données, pour tester sans attendre. Les
+> adresses absentes du cache (statut PENDING) n'apparaissent alors pas sur la carte.
 
 > **macOS :** le port 5000 est occupé par le récepteur AirPlay (erreur
 > « Address already in use » ou page 403). Lancez avec `--port 5001`, ou désactivez
@@ -177,7 +221,7 @@ Seules les adresses absentes du cache sont envoyées à l'API.
 
 ### Fonctionnalités
 
-- **Recherche autocomplete** : tape quelques lettres pour filtrer parmi 6060 villes
+- **Recherche autocomplete** : tape quelques lettres pour filtrer parmi les ~7 000 villes
 - **Navigation clavier** : ↑↓ pour naviguer, Enter pour sélectionner
 - **Filtre par arrondissement** : pour Paris, Lyon, Marseille, etc.
 - **Génération d'itinéraire en temps réel** : calcul TSP + carte interactive
