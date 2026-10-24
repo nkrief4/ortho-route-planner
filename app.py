@@ -405,7 +405,7 @@ def api_generate():
         # Pas assez de sites pour un itinéraire → renvoyer juste la carte
         from pipeline.mapping import create_sites_map
         m = create_sites_map(df_sites.reset_index(drop=True))
-        map_html = m._repr_html_()
+        map_html = m.get_root().render()
         return jsonify({
             "map_html": map_html,
             "route": [],
@@ -530,7 +530,8 @@ def api_generate():
 
     m = create_route_map(df_routable_enriched, route_order, route_geom,
                          df_visited=df_visited_on_map)
-    map_html = m._repr_html_()
+    # Page HTML complète : _repr_html_() (format Jupyter) bloque la carte à 60 % de sa largeur
+    map_html = m.get_root().render()
 
     # ── Construire la réponse ─────────────────────────────────────────
     route_list = []
