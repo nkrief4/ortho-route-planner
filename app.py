@@ -66,6 +66,7 @@ _data = {
     "df_raw": None,
     "df_sites": None,
     "df_orthos": None,
+    "df_directory": None,  # annuaire des orthophonistes (voir _build_directory)
     "cities": [],       # [{"name": "PARIS", "count": 1098, "depts": ["75001", ...]}, ...]
     "ready": False,
 }
@@ -161,6 +162,7 @@ def init_data(skip_geocode: bool = False) -> None:
     _data["df_raw"] = df_raw
     _data["df_sites"] = df_sites
     _data["df_orthos"] = df_orthos
+    _data["df_directory"] = _build_directory(df_orthos)
     _data["cities"] = cities
     _data["ready"] = True
 
@@ -196,6 +198,72 @@ def _build_city_list(df_sites) -> list[dict]:
 
 
 # ═══════════════════════════════════════════════════════════════════════
+#  Annuaire des orthophonistes
+# ═══════════════════════════════════════════════════════════════════════
+
+# Colonnes renvoyées par /api/orthos
+DIRECTORY_COLUMNS = [
+    "rpps", "civility", "family_name", "given_names", "organization",
+    "address", "postal_code", "city", "phone", "email", "mssante",
+]
+
+# Tris disponibles : clé API → colonnes normalisées (casse et accents ignorés)
+DIRECTORY_SORTS = {
+    "name": ["_name"],
+    "organization": ["_org", "_name"],
+    "postal_code": ["_cp", "_name"],
+    "city": ["_city", "_name"],
+}
+
+
+def _normalize_search(text: str) -> str:
+    """Majuscules, sans accents ni ponctuation : 'Saint-Étienne' → 'SAINT ETIENNE'."""
+    text = "".join(
+        c for c in unicodedata.normalize("NFD", text)
+        if unicodedata.category(c) != "Mn"
+    ).upper()
+    return " ".join("".join(c if c.isalnum() or c == "@" else " " for c in text).split())
+
+
+def _build_directory(df_orthos: pd.DataFrame) -> pd.DataFrame:
+    """Table d'affichage de l'annuaire + colonnes de recherche normalisées."""
+    df = df_orthos.fillna("").astype(str)
+
+    def first_filled(*cols: str) -> pd.Series:
+        out = df[cols[0]].str.strip()
+        for col in cols[1:]:
+            out = out.where(out != "", df[col].str.strip())
+        return out
+
+    directory = pd.DataFrame({
+        "rpps": df["rpps"].str.strip(),
+        "family_name": df["family_name"].str.strip(),
+        "given_names": df["given_names"].str.strip(),
+        "organization": df["organization_name"].str.strip(),
+        "address": df["organization_address_line"].str.strip(),
+        "postal_code": first_filled("postal_code_clean", "organization_postal_code"),
+        "city": first_filled("city_clean", "organization_city"),
+        "phone": first_filled("organization_phone", "role_phone"),
+        "email": first_filled("organization_email", "role_email"),
+        "mssante": df["source_email"].str.strip(),
+    })
+    # Beaucoup de prénoms reviennent : on ne devine la civilité qu'une fois par prénom
+    civilities = {name: guess_civility(name) for name in directory["given_names"].unique()}
+    directory["civility"] = directory["given_names"].map(civilities)
+
+    blob = df["address_line_clean"] + " " + df["city_clean"]
+    for col in ["family_name", "given_names", "organization", "address",
+                "postal_code", "city", "phone", "email", "mssante", "rpps"]:
+        blob = blob + " " + directory[col]
+    directory["_search"] = blob.map(_normalize_search)
+    directory["_name"] = (directory["family_name"] + " " + directory["given_names"]).map(_normalize_search)
+    directory["_org"] = directory["organization"].map(_normalize_search)
+    directory["_city"] = df["city_clean"].map(_normalize_search)
+    directory["_cp"] = df["postal_code_clean"].str.strip()
+    return directory
+
+
+# ═══════════════════════════════════════════════════════════════════════
 #  Application Flask
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -223,6 +291,55 @@ def qr_code():
 def api_cities():
     """Liste des villes avec leurs stats."""
     return jsonify(_data["cities"])
+
+
+@app.route("/api/orthos")
+def api_orthos():
+    """
+    Annuaire paginé des orthophonistes.
+    Query : q (recherche libre), city (début du nom de ville), cp (début du
+    code postal), has_phone=1, has_email=1, sort (name|organization|
+    postal_code|city), order (asc|desc), page (1..), per_page (1-200).
+    """
+    if not _data["ready"]:
+        return jsonify({"error": "Données pas encore chargées"}), 503
+
+    df = _data["df_directory"]
+    args = request.args
+
+    try:
+        page = max(int(args.get("page", 1)), 1)
+        per_page = min(max(int(args.get("per_page", 50)), 1), 200)
+    except ValueError:
+        return jsonify({"error": "page et per_page doivent être des entiers"}), 400
+
+    mask = pd.Series(True, index=df.index)
+    for term in _normalize_search(args.get("q", "")).split():
+        mask &= df["_search"].str.contains(term, regex=False)
+    city = _normalize_search(args.get("city", ""))
+    if city:
+        mask &= df["_city"].str.startswith(city)
+    cp = args.get("cp", "").strip()
+    if cp:
+        mask &= df["_cp"].str.startswith(cp)
+    if args.get("has_phone") == "1":
+        mask &= df["phone"] != ""
+    if args.get("has_email") == "1":
+        mask &= (df["email"] != "") | (df["mssante"] != "")
+
+    sort_cols = DIRECTORY_SORTS.get(args.get("sort", "name"), DIRECTORY_SORTS["name"])
+    result = df[mask].sort_values(sort_cols, ascending=args.get("order") != "desc")
+
+    start = (page - 1) * per_page
+    items = result.iloc[start:start + per_page][DIRECTORY_COLUMNS].to_dict("records")
+
+    return jsonify({
+        "total": int(len(result)),
+        "total_all": int(len(df)),
+        "page": page,
+        "per_page": per_page,
+        "items": items,
+    })
 
 
 @app.route("/api/geocode", methods=["POST"])

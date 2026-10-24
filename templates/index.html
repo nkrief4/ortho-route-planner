@@ -2065,6 +2065,374 @@
             }
         }
 
+        /* ═══════════════════════════════════════════════════════════════════
+           ANNUAIRE DES ORTHOPHONISTES
+        ══════════════════════════════════════════════════════════════════ */
+
+        .header-actions {
+            align-items: center;
+        }
+
+        .directory-open-btn {
+            width: auto;
+            padding: 0 var(--space-4);
+            gap: var(--space-2);
+            font-size: 13px;
+            font-weight: 700;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+
+        .directory-open-btn svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .directory-modal {
+            position: fixed;
+            inset: 0;
+            z-index: var(--z-modal);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-6);
+            background: rgba(15, 20, 25, 0.85);
+            backdrop-filter: blur(6px);
+        }
+
+        .directory-modal.visible {
+            display: flex;
+        }
+
+        .directory-container {
+            width: 100%;
+            max-width: 1280px;
+            height: 100%;
+            max-height: 900px;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+        }
+
+        .directory-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-3);
+            padding: var(--space-4) var(--space-6);
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-medium);
+        }
+
+        .directory-header h3 {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .directory-filters {
+            display: grid;
+            grid-template-columns: minmax(220px, 2fr) minmax(140px, 1fr) minmax(120px, 0.8fr) minmax(170px, 1fr);
+            gap: var(--space-3);
+            padding: var(--space-4) var(--space-6) 0;
+        }
+
+        .directory-options {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: var(--space-2) var(--space-3);
+            padding: var(--space-3) var(--space-6);
+            border-bottom: 1px solid var(--border-medium);
+        }
+
+        .directory-options .checkbox-field {
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .directory-options .btn {
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+
+        .directory-count {
+            margin-left: auto;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .directory-count strong {
+            color: var(--primary-light);
+        }
+
+        .directory-scroll {
+            flex: 1;
+            overflow: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .directory-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .directory-table th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: left;
+            padding: 10px 12px;
+            white-space: nowrap;
+            border-bottom: 1px solid var(--border-medium);
+        }
+
+        .directory-table th[data-sort] {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .directory-table th[data-sort]:hover {
+            color: var(--text-primary);
+        }
+
+        .directory-table th.sorted {
+            color: var(--primary-light);
+        }
+
+        .directory-table th.sorted::after {
+            content: " \25B2";
+        }
+
+        .directory-table th.sorted.desc::after {
+            content: " \25BC";
+        }
+
+        .directory-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-primary);
+            vertical-align: top;
+        }
+
+        .directory-table td:empty::before {
+            content: "\2014";
+            color: var(--text-disabled);
+        }
+
+        .directory-table tbody tr:hover {
+            background: var(--bg-card);
+        }
+
+        .directory-table a {
+            color: var(--primary-light);
+            text-decoration: none;
+        }
+
+        .directory-table a:hover {
+            text-decoration: underline;
+        }
+
+        .dir-name {
+            min-width: 170px;
+            font-weight: 700;
+        }
+
+        .dir-civility {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .dir-org {
+            color: var(--text-secondary);
+        }
+
+        .dir-place {
+            display: none;
+        }
+
+        .dir-phone {
+            white-space: nowrap;
+        }
+
+        .dir-email {
+            min-width: 200px;
+            overflow-wrap: anywhere;
+        }
+
+        .dir-mssante {
+            display: block;
+            margin-top: 2px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .dir-rpps {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .directory-status {
+            padding: var(--space-5);
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .directory-status:empty {
+            display: none;
+        }
+
+        /* Le tableau a besoin d'environ 1280px : en dessous, une carte par orthophoniste */
+        @media (max-width: 1280px) {
+            .directory-scroll {
+                padding: var(--space-4) var(--space-6);
+            }
+
+            .directory-table thead {
+                display: none;
+            }
+
+            .directory-table,
+            .directory-table tr,
+            .directory-table td {
+                display: block;
+                width: 100%;
+            }
+
+            .directory-table tbody {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: var(--space-3);
+            }
+
+            .directory-table tr {
+                background: var(--bg-card);
+                border: 1px solid var(--border-medium);
+                border-radius: var(--radius-lg);
+                padding: var(--space-3) var(--space-4);
+            }
+
+            .directory-table tbody tr:hover {
+                background: var(--bg-card);
+            }
+
+            .directory-table td {
+                min-width: 0;
+                padding: 2px 0;
+                border: none;
+            }
+
+            .directory-table td:empty,
+            .directory-table .dir-col-cp,
+            .directory-table .dir-col-city {
+                display: none;
+            }
+
+            .dir-name {
+                font-size: 15px;
+                margin-bottom: 2px;
+            }
+
+            .dir-place {
+                display: block;
+            }
+
+            .dir-phone,
+            .dir-email {
+                padding-top: var(--space-1) !important;
+            }
+
+            .dir-rpps::before {
+                content: "RPPS ";
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .directory-filters {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .directory-filters .directory-search,
+            .directory-filters .form-select {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .directory-open-btn {
+                padding: 0 var(--space-3);
+            }
+
+            .directory-modal {
+                padding: 0;
+            }
+
+            .directory-container {
+                max-width: none;
+                max-height: none;
+                border: none;
+                border-radius: 0;
+            }
+
+            .directory-header {
+                padding: var(--space-3) var(--space-4);
+                padding-top: calc(var(--space-3) + env(safe-area-inset-top));
+            }
+
+            .directory-header h3 {
+                font-size: 16px;
+            }
+
+            .directory-filters {
+                gap: var(--space-2);
+                padding: var(--space-3) var(--space-4) 0;
+            }
+
+            .directory-filters .form-input,
+            .directory-filters .form-select {
+                font-size: 16px;
+                padding: 10px 12px;
+            }
+
+            .directory-options {
+                padding: var(--space-2) var(--space-4) var(--space-3);
+            }
+
+            .directory-count {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .directory-scroll {
+                padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+            }
+        }
+
+        @media (max-width: 375px) {
+            .directory-open-label {
+                display: none;
+            }
+        }
+
         /* Print Styles for Letters */
         @media print {
             body {
@@ -2213,7 +2581,17 @@
             </svg>
         </button>
         <h1><span>Ortho</span> Route Planner</h1>
-        <div class="header-stats" id="headerStats">Chargement…</div>
+        <div class="header-actions">
+            <div class="header-stats" id="headerStats">Chargement…</div>
+            <button type="button" class="header-btn directory-open-btn" id="directoryOpenBtn" aria-label="Ouvrir l'annuaire des orthophonistes">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                </svg>
+                <span class="directory-open-label">Annuaire</span>
+            </button>
+        </div>
     </header>
 
     <div class="layout">
@@ -2582,6 +2960,63 @@
                 <div class="letter-document" id="letterDocument">
                     <!-- Letter content will be generated here -->
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Annuaire des orthophonistes -->
+    <div class="directory-modal" id="directoryModal" role="dialog" aria-modal="true" aria-labelledby="directoryTitle">
+        <div class="directory-container">
+            <div class="directory-header">
+                <h3 id="directoryTitle">Annuaire des orthophonistes</h3>
+                <button type="button" class="header-btn" id="directoryCloseBtn" aria-label="Fermer l'annuaire">✕</button>
+            </div>
+            <div class="directory-filters">
+                <input type="search" id="directorySearch" class="form-input directory-search" placeholder="Nom, cabinet, adresse, email, RPPS…" autocomplete="off" aria-label="Recherche">
+                <input type="text" id="directoryCity" class="form-input" list="directoryCityList" placeholder="Ville" autocomplete="off" aria-label="Ville">
+                <datalist id="directoryCityList"></datalist>
+                <input type="text" id="directoryCp" class="form-input" inputmode="numeric" placeholder="Code postal / dépt." autocomplete="off" aria-label="Code postal ou département">
+                <select id="directorySort" class="form-select" aria-label="Trier par">
+                    <option value="name:asc">Nom (A → Z)</option>
+                    <option value="name:desc">Nom (Z → A)</option>
+                    <option value="organization:asc">Cabinet (A → Z)</option>
+                    <option value="organization:desc">Cabinet (Z → A)</option>
+                    <option value="postal_code:asc">Code postal (croissant)</option>
+                    <option value="postal_code:desc">Code postal (décroissant)</option>
+                    <option value="city:asc">Ville (A → Z)</option>
+                    <option value="city:desc">Ville (Z → A)</option>
+                </select>
+            </div>
+            <div class="directory-options">
+                <label class="checkbox-field">
+                    <input type="checkbox" id="directoryHasPhone">
+                    Avec téléphone
+                </label>
+                <label class="checkbox-field">
+                    <input type="checkbox" id="directoryHasEmail">
+                    Avec email
+                </label>
+                <button type="button" class="btn btn-secondary" id="directoryReset">Réinitialiser</button>
+                <div class="directory-count" id="directoryCount" aria-live="polite"></div>
+            </div>
+            <div class="directory-scroll" id="directoryScroll">
+                <table class="directory-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="name">Nom</th>
+                            <th data-sort="organization">Cabinet</th>
+                            <th>Adresse</th>
+                            <th data-sort="postal_code">CP</th>
+                            <th data-sort="city">Ville</th>
+                            <th>Téléphone</th>
+                            <th>Email</th>
+                            <th>RPPS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="directoryBody"></tbody>
+                </table>
+                <div class="directory-status" id="directoryStatus"></div>
+                <div id="directorySentinel"></div>
             </div>
         </div>
     </div>
@@ -4284,6 +4719,195 @@
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             return R * c;
         }
+
+        // ── Annuaire des orthophonistes ──────────────────
+        const directoryModal = document.getElementById('directoryModal');
+        const directoryScroll = document.getElementById('directoryScroll');
+        const directoryBody = document.getElementById('directoryBody');
+        const directoryStatus = document.getElementById('directoryStatus');
+        const directoryCount = document.getElementById('directoryCount');
+        const directorySort = document.getElementById('directorySort');
+        const directorySearch = document.getElementById('directorySearch');
+        const directoryCity = document.getElementById('directoryCity');
+        const directoryCp = document.getElementById('directoryCp');
+        const directoryHasPhone = document.getElementById('directoryHasPhone');
+        const directoryHasEmail = document.getElementById('directoryHasEmail');
+        const DIRECTORY_PER_PAGE = 100;
+        const directoryState = { page: 0, done: false, loading: false, requestId: 0 };
+        let directoryCitiesFilled = false;
+        let directoryDebounce = null;
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => (
+                {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]
+            ));
+        }
+
+        function formatPhone(phone) {
+            const digits = phone.replace(/\D/g, '');
+            return digits.length === 10 ? digits.replace(/(\d{2})(?=\d)/g, '$1 ') : phone;
+        }
+
+        function capitalizeName(name) {
+            return name.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (m, sep, ch) => sep + ch.toUpperCase());
+        }
+
+        function emailHtml(address) {
+            return `<a href="mailto:${escapeHtml(address)}">${escapeHtml(address).replace(/([@.])/g, '$1<wbr>')}</a>`;
+        }
+
+        function directoryRowHtml(o) {
+            const civility = o.civility === 'Madame' ? 'Mme' : o.civility === 'Monsieur' ? 'M.' : '';
+            const place = [o.postal_code, o.city].filter(Boolean).join(' ');
+            const mapsUrl = 'https://www.google.com/maps/search/?api=1&query='
+                + encodeURIComponent([o.address, place].filter(Boolean).join(', '));
+
+            const address = (o.address
+                ? `<a href="${mapsUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(o.address)}</a>`
+                : '') + (place ? `<span class="dir-place">${escapeHtml(place)}</span>` : '');
+            const phone = o.phone
+                ? `<a href="tel:${escapeHtml(o.phone.replace(/[^\d+]/g, ''))}">${escapeHtml(formatPhone(o.phone))}</a>`
+                : '';
+            let email = o.email ? emailHtml(o.email) : '';
+            if (o.mssante && o.mssante !== o.email) {
+                email += `<span class="dir-mssante">MSSanté : ${emailHtml(o.mssante)}</span>`;
+            }
+
+            return `<tr>
+                <td class="dir-name">${civility ? `<span class="dir-civility">${civility}</span> ` : ''}${escapeHtml(o.family_name)} ${escapeHtml(capitalizeName(o.given_names))}</td>
+                <td class="dir-org">${escapeHtml(o.organization)}</td>
+                <td class="dir-address">${address}</td>
+                <td class="dir-col-cp">${escapeHtml(o.postal_code)}</td>
+                <td class="dir-col-city">${escapeHtml(o.city)}</td>
+                <td class="dir-phone">${phone}</td>
+                <td class="dir-email">${email}</td>
+                <td class="dir-rpps">${escapeHtml(o.rpps)}</td>
+            </tr>`;
+        }
+
+        function directoryQuery(page) {
+            const [sort, order] = directorySort.value.split(':');
+            const params = new URLSearchParams({ sort, order, page, per_page: DIRECTORY_PER_PAGE });
+            if (directorySearch.value.trim()) params.set('q', directorySearch.value.trim());
+            if (directoryCity.value.trim()) params.set('city', directoryCity.value.trim());
+            if (directoryCp.value.trim()) params.set('cp', directoryCp.value.trim());
+            if (directoryHasPhone.checked) params.set('has_phone', '1');
+            if (directoryHasEmail.checked) params.set('has_email', '1');
+            return params;
+        }
+
+        async function loadDirectory(reset = false) {
+            if (reset) {
+                directoryState.page = 0;
+                directoryState.done = false;
+                directoryBody.innerHTML = '';
+                directoryScroll.scrollTop = 0;
+            } else if (directoryState.loading || directoryState.done) {
+                return;
+            }
+
+            // Un nouveau filtre rend obsolètes les réponses encore en route
+            const requestId = ++directoryState.requestId;
+            directoryState.loading = true;
+            directoryStatus.textContent = 'Chargement…';
+
+            try {
+                const resp = await fetch('/api/orthos?' + directoryQuery(directoryState.page + 1));
+                const data = await resp.json();
+                if (requestId !== directoryState.requestId) return;
+                if (!resp.ok) throw new Error(data.error || `Erreur ${resp.status}`);
+
+                directoryBody.insertAdjacentHTML('beforeend', data.items.map(directoryRowHtml).join(''));
+                directoryState.page = data.page;
+                directoryState.done = data.page * data.per_page >= data.total;
+                directoryCount.innerHTML = `<strong>${data.total.toLocaleString('fr-FR')}</strong> `
+                    + `orthophoniste${data.total > 1 ? 's' : ''} sur ${data.total_all.toLocaleString('fr-FR')}`;
+                directoryStatus.textContent = data.total === 0 ? 'Aucun orthophoniste ne correspond à ces critères.' : '';
+            } catch (e) {
+                if (requestId !== directoryState.requestId) return;
+                directoryStatus.textContent = `Impossible de charger l'annuaire (${e.message}).`;
+                return;
+            } finally {
+                if (requestId === directoryState.requestId) directoryState.loading = false;
+            }
+
+            // L'observateur ne se redéclenche pas si la fin de liste reste visible : on remplit l'écran
+            if (!directoryState.done && directoryScroll.scrollHeight <= directoryScroll.clientHeight + 400) {
+                loadDirectory();
+            }
+        }
+
+        function scheduleDirectoryReload() {
+            clearTimeout(directoryDebounce);
+            directoryDebounce = setTimeout(() => loadDirectory(true), 250);
+        }
+
+        function updateDirectorySortHeaders() {
+            const [sort, order] = directorySort.value.split(':');
+            document.querySelectorAll('.directory-table th[data-sort]').forEach(th => {
+                const active = th.dataset.sort === sort;
+                th.classList.toggle('sorted', active);
+                th.classList.toggle('desc', active && order === 'desc');
+                th.setAttribute('aria-sort', active ? (order === 'desc' ? 'descending' : 'ascending') : 'none');
+            });
+        }
+
+        function openDirectory() {
+            if (!directoryCitiesFilled && citiesData.length) {
+                document.getElementById('directoryCityList').innerHTML =
+                    citiesData.map(c => `<option value="${escapeHtml(c.name)}">`).join('');
+                directoryCitiesFilled = true;
+            }
+            directoryModal.classList.add('visible');
+            if (directoryState.page === 0 && !directoryState.loading) loadDirectory(true);
+            if (window.matchMedia('(min-width: 769px)').matches) directorySearch.focus();
+        }
+
+        function closeDirectory() {
+            directoryModal.classList.remove('visible');
+        }
+
+        new IntersectionObserver(entries => {
+            if (entries.some(e => e.isIntersecting)) loadDirectory();
+        }, { root: directoryScroll, rootMargin: '400px' }).observe(document.getElementById('directorySentinel'));
+
+        [directorySearch, directoryCity, directoryCp].forEach(el => el.addEventListener('input', scheduleDirectoryReload));
+        [directoryHasPhone, directoryHasEmail].forEach(el => el.addEventListener('change', () => loadDirectory(true)));
+        directorySort.addEventListener('change', () => {
+            updateDirectorySortHeaders();
+            loadDirectory(true);
+        });
+
+        document.querySelectorAll('.directory-table th[data-sort]').forEach(th => {
+            th.addEventListener('click', () => {
+                const [sort, order] = directorySort.value.split(':');
+                const nextOrder = sort === th.dataset.sort && order === 'asc' ? 'desc' : 'asc';
+                directorySort.value = `${th.dataset.sort}:${nextOrder}`;
+                updateDirectorySortHeaders();
+                loadDirectory(true);
+            });
+        });
+
+        document.getElementById('directoryReset').addEventListener('click', () => {
+            directorySearch.value = '';
+            directoryCity.value = '';
+            directoryCp.value = '';
+            directoryHasPhone.checked = false;
+            directoryHasEmail.checked = false;
+            directorySort.value = 'name:asc';
+            updateDirectorySortHeaders();
+            loadDirectory(true);
+        });
+
+        document.getElementById('directoryOpenBtn').addEventListener('click', openDirectory);
+        document.getElementById('directoryCloseBtn').addEventListener('click', closeDirectory);
+        directoryModal.addEventListener('click', (e) => {
+            if (e.target === directoryModal) closeDirectory();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && directoryModal.classList.contains('visible')) closeDirectory();
+        });
+        updateDirectorySortHeaders();
 
         // ── Init ─────────────────────────────────────────
         async function init() {
