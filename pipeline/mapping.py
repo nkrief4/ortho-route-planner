@@ -48,7 +48,7 @@ def create_sites_map(df_sites: pd.DataFrame) -> folium.Map:
         return folium.Map(location=[46.6, 2.3], zoom_start=6)
 
     center = [df["latitude"].mean(), df["longitude"].mean()]
-    m = folium.Map(location=center, zoom_start=12, tiles="CartoDB positron")
+    m = folium.Map(location=center, zoom_start=12, tiles="OpenStreetMap")
 
     for _, row in df.iterrows():
         color = STATUS_COLORS.get(row.get("status", ""), "#999")
@@ -92,7 +92,7 @@ def create_route_map(
         return folium.Map(location=[46.6, 2.3], zoom_start=6)
 
     center = [df["latitude"].mean(), df["longitude"].mean()]
-    m = folium.Map(location=center, zoom_start=13, tiles="CartoDB positron")
+    m = folium.Map(location=center, zoom_start=13, tiles="OpenStreetMap")
 
     # ── Polyline ─────────────────────────────────────────────────────
     if route_geometry:
