@@ -6,6 +6,7 @@ Deux cartes :
   B) map_route.html  : itinéraire optimal avec polyline + marqueurs ordonnés
 """
 
+import os
 from pathlib import Path
 
 import folium
@@ -15,6 +16,28 @@ from .config import OUTPUT_DIR
 
 # ── Couleurs par statut ──────────────────────────────────────────────
 STATUS_COLORS = {"OK": "#2ecc71", "WARNING": "#f39c12", "FAILED": "#e74c3c"}
+
+# ── Fond de carte ────────────────────────────────────────────────────
+# Les tuiles CARTO exigent une clé (gratuite : https://carto.com/basemaps/apikey).
+# Sans CARTO_API_KEY, on retombe sur les tuiles OpenStreetMap, sans clé.
+CARTO_TILES = "https://basemaps.cartocdn.com/rastertiles/light_all/{{z}}/{{x}}/{{y}}{{r}}.png?key={key}"
+CARTO_ATTR = (
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors '
+    '&copy; <a href="https://carto.com/attributions">CARTO</a>'
+)
+
+
+def _base_map(location: list[float], zoom_start: int) -> folium.Map:
+    """Carte vide avec le fond CARTO Positron si une clé est configurée, sinon OSM."""
+    key = os.getenv("CARTO_API_KEY", "").strip()
+    if key:
+        return folium.Map(
+            location=location,
+            zoom_start=zoom_start,
+            tiles=CARTO_TILES.format(key=key),
+            attr=CARTO_ATTR,
+        )
+    return folium.Map(location=location, zoom_start=zoom_start, tiles="OpenStreetMap")
 
 
 def _legend_html() -> str:
@@ -45,10 +68,10 @@ def create_sites_map(df_sites: pd.DataFrame) -> folium.Map:
     df = df_sites[df_sites["latitude"].notna()].copy()
 
     if df.empty:
-        return folium.Map(location=[46.6, 2.3], zoom_start=6)
+        return _base_map([46.6, 2.3], 6)
 
     center = [df["latitude"].mean(), df["longitude"].mean()]
-    m = folium.Map(location=center, zoom_start=12, tiles="OpenStreetMap")
+    m = _base_map(center, 12)
 
     for _, row in df.iterrows():
         color = STATUS_COLORS.get(row.get("status", ""), "#999")
@@ -89,10 +112,10 @@ def create_route_map(
     """
     df = df_routable.copy()
     if df.empty or not route_order:
-        return folium.Map(location=[46.6, 2.3], zoom_start=6)
+        return _base_map([46.6, 2.3], 6)
 
     center = [df["latitude"].mean(), df["longitude"].mean()]
-    m = folium.Map(location=center, zoom_start=13, tiles="OpenStreetMap")
+    m = _base_map(center, 13)
 
     # ── Polyline ─────────────────────────────────────────────────────
     if route_geometry:
