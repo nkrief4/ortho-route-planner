@@ -129,6 +129,30 @@ venv/bin/python scraping/main.py --code 91 --resume --enrich-only
 venv/bin/python scraping/extract_contact_columns.py
 ```
 
+### Mettre a jour toutes les donnees
+
+Les donnees viennent de l'API Annuaire Sante de l'ANS (FHIR) :
+
+1. `Practitioner?qualification-code=91` : la liste des orthophonistes (nom, RPPS, MSSante).
+2. Pour chacun, `PractitionerRole?practitioner=<id>&active=true&_include=PractitionerRole:organization` :
+   ses lieux d'exercice actifs et la fiche du cabinet (adresse, telephone, email).
+   Le telephone et l'email sont donc ceux du cabinet, pas de la personne.
+
+**A lancer depuis un ordinateur personnel** : l'API refuse les adresses IP des serveurs
+cloud (« Your IP ... is not allowed to reach this resource »). Compter 1h30 a 3h.
+
+```bash
+venv/bin/python scraping/check_api.py                             # verifie la cle ESANTE_API_KEY
+caffeinate -i venv/bin/python scraping/main.py --code 91 --resume  # macOS : empeche la veille
+                                                                  # relancer la meme commande reprend la ou elle s'est arretee
+cp data/enriched/contacts_orthophoniste_91.csv data/enriched/contacts_orthophonistes_basic.csv
+```
+
+Puis geocoder les nouvelles adresses en lancant `venv/bin/python app.py` une fois
+(le cache `output/cache/geocode_cache.json` est complete), et versionner les deux
+fichiers (`contacts_orthophonistes_basic.csv` et `geocode_cache.json`). Sans le cache
+a jour, le site en ligne geocoderait les nouvelles adresses a chaque demarrage.
+
 ## 2. Interface Web (app.py)
 
 ### Lancer l'interface

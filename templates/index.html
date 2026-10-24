@@ -2240,6 +2240,15 @@
             background: var(--bg-card);
         }
 
+        .directory-table tr.dir-located {
+            cursor: pointer;
+        }
+
+        .dir-pin {
+            margin-left: var(--space-1);
+            font-size: 13px;
+        }
+
         .directory-table a {
             color: var(--primary-light);
             text-decoration: none;
@@ -2288,6 +2297,12 @@
             font-size: 12px;
             color: var(--text-muted);
             font-variant-numeric: tabular-nums;
+        }
+
+        .directory-hint {
+            padding: 0 var(--space-6) var(--space-3);
+            font-size: 12px;
+            color: var(--text-muted);
         }
 
         .directory-status {
@@ -2415,6 +2430,10 @@
 
             .directory-options {
                 padding: var(--space-2) var(--space-4) var(--space-3);
+            }
+
+            .directory-hint {
+                display: none;
             }
 
             .directory-count {
@@ -2999,6 +3018,7 @@
                 <button type="button" class="btn btn-secondary" id="directoryReset">Réinitialiser</button>
                 <div class="directory-count" id="directoryCount" aria-live="polite"></div>
             </div>
+            <div class="directory-hint">Cliquez sur un orthophoniste marqué 📍 pour le voir sur la carte.</div>
             <div class="directory-scroll" id="directoryScroll">
                 <table class="directory-table">
                     <thead>
@@ -3484,14 +3504,7 @@
                     return;
                 }
 
-                // Show map
-                mapPlaceholder.style.display = 'none';
-                const existingIframe = mapArea.querySelector('iframe');
-                if (existingIframe) existingIframe.remove();
-
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = data.map_html;
-                mapArea.appendChild(iframe);
+                showMapHtml(data.map_html);
 
                 // Show stats
                 if (data.stats) {
@@ -4720,6 +4733,35 @@
             return R * c;
         }
 
+        // ── Affichage de la carte (document Folium dans une iframe) ──
+        function showMapHtml(html) {
+            mapPlaceholder.style.display = 'none';
+            const existingIframe = mapArea.querySelector('iframe');
+            if (existingIframe) existingIframe.remove();
+
+            const iframe = document.createElement('iframe');
+            iframe.srcdoc = html;
+            mapArea.appendChild(iframe);
+            return iframe;
+        }
+
+        // Carte Leaflet créée par Folium dans l'iframe (variable globale map_<id>)
+        function getLeafletMap(iframe = mapArea.querySelector('iframe')) {
+            const win = iframe && iframe.contentWindow;
+            if (!win || !win.L) return null;
+            const key = Object.keys(win).find(k => k.startsWith('map_') && win[k] instanceof win.L.Map);
+            return key ? { L: win.L, map: win[key] } : null;
+        }
+
+        function waitForLeafletMap(iframe) {
+            return new Promise((resolve, reject) => {
+                iframe.addEventListener('load', () => {
+                    const found = getLeafletMap(iframe);
+                    found ? resolve(found) : reject(new Error('carte introuvable'));
+                }, { once: true });
+            });
+        }
+
         // ── Annuaire des orthophonistes ──────────────────
         const directoryModal = document.getElementById('directoryModal');
         const directoryScroll = document.getElementById('directoryScroll');
@@ -4736,6 +4778,8 @@
         const directoryState = { page: 0, done: false, loading: false, requestId: 0 };
         let directoryCitiesFilled = false;
         let directoryDebounce = null;
+        let directoryItems = [];
+        let directoryFocus = null;  // { map, layers } du marqueur affiché depuis l'annuaire
 
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, c => (
@@ -4773,8 +4817,11 @@
                 email += `<span class="dir-mssante">MSSanté : ${emailHtml(o.mssante)}</span>`;
             }
 
-            return `<tr>
-                <td class="dir-name">${civility ? `<span class="dir-civility">${civility}</span> ` : ''}${escapeHtml(o.family_name)} ${escapeHtml(capitalizeName(o.given_names))}</td>
+            const located = o.lat !== null && o.lon !== null;
+            const index = directoryItems.push(o) - 1;
+
+            return `<tr data-index="${index}"${located ? ' class="dir-located" title="Voir sur la carte"' : ''}>
+                <td class="dir-name">${civility ? `<span class="dir-civility">${civility}</span> ` : ''}${escapeHtml(o.family_name)} ${escapeHtml(capitalizeName(o.given_names))}${located ? '<span class="dir-pin" aria-hidden="true">📍</span>' : ''}</td>
                 <td class="dir-org">${escapeHtml(o.organization)}</td>
                 <td class="dir-address">${address}</td>
                 <td class="dir-col-cp">${escapeHtml(o.postal_code)}</td>
@@ -4801,6 +4848,7 @@
                 directoryState.page = 0;
                 directoryState.done = false;
                 directoryBody.innerHTML = '';
+                directoryItems = [];
                 directoryScroll.scrollTop = 0;
             } else if (directoryState.loading || directoryState.done) {
                 return;
@@ -4836,6 +4884,71 @@
                 loadDirectory();
             }
         }
+
+        function orthoPopupHtml(o) {
+            const name = `${escapeHtml(o.family_name)} ${escapeHtml(capitalizeName(o.given_names))}`;
+            const place = [o.postal_code, o.city].filter(Boolean).join(' ');
+            const lines = [
+                `<b style="font-size:14px">${name}</b>`,
+                o.organization ? escapeHtml(o.organization) : '',
+                escapeHtml(o.address),
+                escapeHtml(place),
+                o.phone ? `<a href="tel:${escapeHtml(o.phone.replace(/[^\d+]/g, ''))}">${escapeHtml(formatPhone(o.phone))}</a>` : '',
+                o.email ? `<a href="mailto:${escapeHtml(o.email)}">${escapeHtml(o.email)}</a>` : '',
+            ];
+            return `<div style="font-family:system-ui,sans-serif;font-size:13px;line-height:1.5">${lines.filter(Boolean).join('<br>')}</div>`;
+        }
+
+        async function showOrthoOnMap(o) {
+            closeDirectory();
+            if (window.innerWidth <= 768 && sidebar.classList.contains('expanded')) collapseSheet();
+
+            // On garde l'itinéraire affiché s'il y en a un ; sinon on charge un fond de carte
+            let target = getLeafletMap();
+            try {
+                if (!target) {
+                    const resp = await fetch(`/api/map?lat=${o.lat}&lon=${o.lon}`);
+                    const data = await resp.json();
+                    if (!resp.ok) throw new Error(data.error || `Erreur ${resp.status}`);
+                    target = await waitForLeafletMap(showMapHtml(data.map_html));
+                }
+            } catch (e) {
+                showToast(`Impossible d'afficher la carte (${e.message})`);
+                return;
+            }
+
+            const { L, map } = target;
+            if (directoryFocus && directoryFocus.map === map) {
+                directoryFocus.layers.forEach(layer => layer.remove());
+            }
+
+            // Calque au-dessus des marqueurs d'étapes (600) et sous les popups (700)
+            if (!map.getPane('directoryFocus')) map.createPane('directoryFocus').style.zIndex = 650;
+            const halo = L.circleMarker([o.lat, o.lon], {
+                pane: 'directoryFocus', radius: 22, stroke: false,
+                fillColor: '#f97316', fillOpacity: 0.25, interactive: false,
+            }).addTo(map);
+            const marker = L.circleMarker([o.lat, o.lon], {
+                pane: 'directoryFocus', radius: 10, color: '#ffffff', weight: 3,
+                fillColor: '#f97316', fillOpacity: 1,
+            }).addTo(map).bindPopup(orthoPopupHtml(o), { maxWidth: 280 });
+            directoryFocus = { map, layers: [halo, marker] };
+
+            map.once('moveend', () => marker.openPopup());
+            map.flyTo([o.lat, o.lon], Math.max(map.getZoom(), 16), { duration: 0.8 });
+        }
+
+        directoryBody.addEventListener('click', (e) => {
+            if (e.target.closest('a')) return;  // téléphone, email, Google Maps : comportement normal
+            const row = e.target.closest('tr[data-index]');
+            if (!row) return;
+            const o = directoryItems[Number(row.dataset.index)];
+            if (o.lat === null || o.lon === null) {
+                showToast("L'adresse de cet orthophoniste n'a pas pu être localisée sur la carte");
+                return;
+            }
+            showOrthoOnMap(o);
+        });
 
         function scheduleDirectoryReload() {
             clearTimeout(directoryDebounce);
