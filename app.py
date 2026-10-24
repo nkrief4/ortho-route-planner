@@ -137,23 +137,16 @@ def init_data(skip_geocode: bool = False) -> None:
     df_orthos = merge_site_ids(df_raw, df_sites)
     print(f"  {len(df_sites)} sites uniques")
 
-    # ── Phase 4 : Géocodage (optionnel) ───────────────────────────────
-    if not skip_geocode:
-        print("\n" + "=" * 60)
-        print("  PHASE 4 — Géocodage des sites (avec cache)")
-        print("=" * 60)
-        df_sites = geocode_sites(df_sites)
-        n_ok = (df_sites["status"] == "OK").sum()
-        n_warn = (df_sites["status"] == "WARNING").sum()
-        print(f"  OK={n_ok}  WARNING={n_warn}  FAILED={(df_sites['status'] == 'FAILED').sum()}")
+    # ── Phase 4 : Géocodage (cache seul si --skip-geocode) ────────────
+    print("\n" + "=" * 60)
+    if skip_geocode:
+        print("  PHASE 4 — Géocodage depuis le cache uniquement (--skip-geocode)")
     else:
-        print("\n  [skip] Géocodage ignoré (--skip-geocode)")
-        # Ajouter des colonnes vides pour éviter les erreurs
-        for col in ["geocoded_label", "latitude", "longitude", "score", "status"]:
-            if col not in df_sites.columns:
-                df_sites[col] = None
-        df_sites["status"] = df_sites["status"].fillna("PENDING")
-        df_sites["score"] = df_sites["score"].fillna(0.0)
+        print("  PHASE 4 — Géocodage des sites (avec cache)")
+    print("=" * 60)
+    df_sites = geocode_sites(df_sites, cache_only=skip_geocode)
+    counts = df_sites["status"].value_counts()
+    print("  " + "  ".join(f"{s}={counts.get(s, 0)}" for s in ("OK", "WARNING", "FAILED", "PENDING")))
 
     # ── Construire la liste des villes ─────────────────────────────────
     cities = _build_city_list(df_sites)
@@ -204,8 +197,10 @@ app = Flask(__name__, template_folder=str(ROOT / "templates"))
 # ── Initialiser les données au démarrage (important pour Gunicorn) ───
 # Quand l'app est lancée avec gunicorn, le bloc "if __name__ == '__main__'"
 # n'est pas exécuté, donc on charge les données ici pour garantir qu'elles
-# soient disponibles même avec gunicorn
-init_data(skip_geocode=False)
+# soient disponibles même avec gunicorn. En lancement direct (python app.py),
+# c'est le bloc __main__ qui charge les données, pour respecter --skip-geocode.
+if __name__ != "__main__":
+    init_data(skip_geocode=False)
 
 
 @app.route("/")
