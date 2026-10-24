@@ -3309,6 +3309,7 @@
                     // Enable generate button if city is selected
                     generateBtn.disabled = !selectedCity;
                 }
+                updateRadiusField();
             });
         });
 
@@ -3534,9 +3535,13 @@
         const startAddressField = document.getElementById('startAddress');
         const radiusField = document.getElementById('radiusField');
 
-        startAddressField.addEventListener('input', () => {
-            radiusField.style.display = startAddressField.value.trim() ? 'block' : 'none';
-        });
+        // En mode zone, le rayon se choisit avec les puces : ce sélecteur ne sert qu'au mode ville
+        function updateRadiusField() {
+            const show = searchMode === 'city' && startAddressField.value.trim();
+            radiusField.style.display = show ? 'block' : 'none';
+        }
+
+        startAddressField.addEventListener('input', updateRadiusField);
 
         // ── Google Maps ──────────────────────────────────
         function openGoogleMaps() {
