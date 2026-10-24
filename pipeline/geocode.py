@@ -46,7 +46,7 @@ def _save_cache(cache: dict, cache_path: Path) -> None:
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = cache_path.with_suffix(".tmp")
     with tmp.open("w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False)
+        json.dump(cache, f, ensure_ascii=False, indent=4)  # indenté : diffs git lisibles
     tmp.replace(cache_path)
 
 
