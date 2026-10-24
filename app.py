@@ -162,7 +162,7 @@ def init_data(skip_geocode: bool = False) -> None:
     _data["df_raw"] = df_raw
     _data["df_sites"] = df_sites
     _data["df_orthos"] = df_orthos
-    _data["df_directory"] = _build_directory(df_orthos)
+    _data["df_directory"] = _build_directory(df_orthos, df_sites)
     _data["cities"] = cities
     _data["ready"] = True
 
@@ -204,7 +204,7 @@ def _build_city_list(df_sites) -> list[dict]:
 # Colonnes renvoyées par /api/orthos
 DIRECTORY_COLUMNS = [
     "rpps", "civility", "family_name", "given_names", "organization",
-    "address", "postal_code", "city", "phone", "email", "mssante",
+    "address", "postal_code", "city", "phone", "email", "mssante", "lat", "lon",
 ]
 
 # Tris disponibles : clé API → colonnes normalisées (casse et accents ignorés)
@@ -225,7 +225,7 @@ def _normalize_search(text: str) -> str:
     return " ".join("".join(c if c.isalnum() or c == "@" else " " for c in text).split())
 
 
-def _build_directory(df_orthos: pd.DataFrame) -> pd.DataFrame:
+def _build_directory(df_orthos: pd.DataFrame, df_sites: pd.DataFrame) -> pd.DataFrame:
     """Table d'affichage de l'annuaire + colonnes de recherche normalisées."""
     df = df_orthos.fillna("").astype(str)
 
@@ -247,6 +247,14 @@ def _build_directory(df_orthos: pd.DataFrame) -> pd.DataFrame:
         "email": first_filled("organization_email", "role_email"),
         "mssante": df["source_email"].str.strip(),
     })
+    # Coordonnées du cabinet, seulement quand le géocodage est exploitable
+    located = df_sites[df_sites["status"].isin(["OK", "WARNING"])]
+    coords = df_orthos[["site_id"]].merge(
+        located[["site_id", "latitude", "longitude"]], on="site_id", how="left",
+    )
+    directory["lat"] = coords["latitude"].to_numpy()
+    directory["lon"] = coords["longitude"].to_numpy()
+
     # Beaucoup de prénoms reviennent : on ne devine la civilité qu'une fois par prénom
     civilities = {name: guess_civility(name) for name in directory["given_names"].unique()}
     directory["civility"] = directory["given_names"].map(civilities)
@@ -331,7 +339,9 @@ def api_orthos():
     result = df[mask].sort_values(sort_cols, ascending=args.get("order") != "desc")
 
     start = (page - 1) * per_page
-    items = result.iloc[start:start + per_page][DIRECTORY_COLUMNS].to_dict("records")
+    page_df = result.iloc[start:start + per_page][DIRECTORY_COLUMNS]
+    # NaN n'existe pas en JSON : les coordonnées manquantes deviennent null
+    items = page_df.astype(object).where(page_df.notna(), None).to_dict("records")
 
     return jsonify({
         "total": int(len(result)),
@@ -340,6 +350,19 @@ def api_orthos():
         "per_page": per_page,
         "items": items,
     })
+
+
+@app.route("/api/map")
+def api_map():
+    """Carte vide centrée sur lat/lon, pour afficher un orthophoniste sans itinéraire."""
+    try:
+        lat = float(request.args["lat"])
+        lon = float(request.args["lon"])
+    except (KeyError, ValueError):
+        return jsonify({"error": "lat et lon (nombres) sont requis"}), 400
+
+    from pipeline.mapping import create_point_map
+    return jsonify({"map_html": create_point_map(lat, lon).get_root().render()})
 
 
 @app.route("/api/geocode", methods=["POST"])
@@ -527,7 +550,7 @@ def api_generate():
         # Pas assez de sites pour un itinéraire → renvoyer juste la carte
         from pipeline.mapping import create_sites_map
         m = create_sites_map(df_sites.reset_index(drop=True))
-        map_html = m._repr_html_()
+        map_html = m.get_root().render()
         return jsonify({
             "map_html": map_html,
             "route": [],
@@ -652,7 +675,7 @@ def api_generate():
 
     m = create_route_map(df_routable_enriched, route_order, route_geom,
                          df_visited=df_visited_on_map)
-    map_html = m._repr_html_()
+    map_html = m.get_root().render()
 
     # ── Construire la réponse ─────────────────────────────────────────
     route_list = []

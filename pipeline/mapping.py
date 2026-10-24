@@ -202,6 +202,15 @@ def create_route_map(
 
 
 # ═══════════════════════════════════════════════════════════════════════
+#  Carte centrée sur un point
+# ═══════════════════════════════════════════════════════════════════════
+
+def create_point_map(lat: float, lon: float, zoom: int = 16) -> folium.Map:
+    """Carte vide centrée sur un point (fond quand aucun itinéraire n'est affiché)."""
+    return folium.Map(location=[lat, lon], zoom_start=zoom, tiles="OpenStreetMap")
+
+
+# ═══════════════════════════════════════════════════════════════════════
 #  Export
 # ═══════════════════════════════════════════════════════════════════════
 
