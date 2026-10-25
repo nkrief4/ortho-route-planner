@@ -58,7 +58,7 @@ sys.path.insert(0, str(ROOT))
 from pipeline.config import INPUT_CSV
 from pipeline.load import load_csv
 from pipeline.clean import apply_normalization
-from pipeline.sites import create_sites_table, merge_site_ids
+from pipeline.sites import add_postal_code_group, create_sites_table, merge_site_ids
 from pipeline.geocode import geocode_sites
 
 # ── Données globales (chargées au démarrage) ──────────────────────────
@@ -145,7 +145,7 @@ def init_data(skip_geocode: bool = False) -> None:
     else:
         print("  PHASE 4 — Géocodage des sites (avec cache)")
     print("=" * 60)
-    df_sites = geocode_sites(df_sites, cache_only=skip_geocode)
+    df_sites = add_postal_code_group(geocode_sites(df_sites, cache_only=skip_geocode))
     counts = df_sites["status"].value_counts()
     print("  " + "  ".join(f"{s}={counts.get(s, 0)}" for s in ("OK", "WARNING", "FAILED", "PENDING")))
 
@@ -166,15 +166,15 @@ def init_data(skip_geocode: bool = False) -> None:
 
 
 def _build_city_list(df_sites) -> list[dict]:
-    """Construit la liste des villes avec le nombre de sites et les CP."""
+    """Construit la liste des villes (communes) avec le nombre de sites et les CP."""
     cities_data = []
 
-    grouped = df_sites.groupby("city_clean")
+    grouped = df_sites.groupby("city_group")
     for city_name, group in grouped:
         if not city_name or city_name == "":
             continue
 
-        depts = sorted(group["postal_code_clean"].unique().tolist())
+        depts = sorted(group["postal_code_group"].unique().tolist())
         n_sites = len(group)
         n_orthos = int(group["nb_orthos"].sum())
 
@@ -235,7 +235,8 @@ def _build_directory(df_orthos: pd.DataFrame, df_sites: pd.DataFrame) -> pd.Data
         "organization": df["organization_name"].str.strip(),
         "address": df["organization_address_line"].str.strip(),
         "postal_code": first_filled("postal_code_clean", "organization_postal_code"),
-        "city": first_filled("city_clean", "organization_city"),
+        "city": first_filled(*(["organization_commune"] if "organization_commune" in df else []),
+                             "city_clean", "organization_city"),
         "phone": first_filled("organization_phone", "role_phone"),
         "email": first_filled("organization_email", "role_email"),
         "mssante": df["source_email"].str.strip(),
@@ -247,6 +248,10 @@ def _build_directory(df_orthos: pd.DataFrame, df_sites: pd.DataFrame) -> pd.Data
     )
     directory["lat"] = coords["latitude"].to_numpy()
     directory["lon"] = coords["longitude"].to_numpy()
+    # CP de la position réelle (CEDEX → CP de l'arrondissement), pour le filtre
+    cp_group = df_orthos[["site_id"]].merge(
+        df_sites[["site_id", "postal_code_group"]], on="site_id", how="left",
+    )["postal_code_group"].fillna("").to_numpy()
 
     # Beaucoup de prénoms reviennent : on ne devine la civilité qu'une fois par prénom
     civilities = {name: guess_civility(name) for name in directory["given_names"].unique()}
@@ -259,8 +264,8 @@ def _build_directory(df_orthos: pd.DataFrame, df_sites: pd.DataFrame) -> pd.Data
     directory["_search"] = blob.map(_normalize_search)
     directory["_name"] = (directory["family_name"] + " " + directory["given_names"]).map(_normalize_search)
     directory["_org"] = directory["organization"].map(_normalize_search)
-    directory["_city"] = df["city_clean"].map(_normalize_search)
-    directory["_cp"] = df["postal_code_clean"].str.strip()
+    directory["_city"] = df["city_group"].map(_normalize_search)
+    directory["_cp"] = pd.Series(cp_group, index=df.index).where(cp_group != "", df["postal_code_clean"].str.strip())
     return directory
 
 
@@ -499,11 +504,13 @@ def api_generate():
         else:
             print(f"  [zone] {total_in_zone} sites dans un rayon de {radius_km} km")
 
-    elif dept_filter:
-        mask = df_sites["postal_code_clean"].str.startswith(dept_filter)
-        df_sites = df_sites[mask].copy()
-    elif city_filter:
-        mask = df_sites["city_clean"].str.upper() == city_filter
+    elif dept_filter or city_filter:
+        # Ville ET code postal : un CP peut couvrir plusieurs communes (59160…)
+        mask = pd.Series(True, index=df_sites.index)
+        if city_filter:
+            mask &= df_sites["city_group"] == city_filter
+        if dept_filter:
+            mask &= df_sites["postal_code_group"].str.startswith(dept_filter)
         df_sites = df_sites[mask].copy()
     else:
         return jsonify({"error": "Veuillez spécifier une ville ou un code postal"}), 400

@@ -42,6 +42,9 @@ MSSANTE_DATASET_API = (
 DEFAULT_RAW_DIR = _ROOT / "data" / "raw"
 DEFAULT_OUTPUT = _ROOT / "data" / "enriched" / "contacts_orthophonistes_basic.csv"
 ACTIVITY_FILE_PREFIX = "PS_LibreAcces_Personne_activite"
+# Colonnes en plus du schema de scraping/main.py : commune officielle (code INSEE et
+# libelle), plus fiables que la ville saisie dans l'adresse (CEDEX, variantes, erreurs)
+EXTRA_FIELDS = ["organization_city_code", "organization_commune"]
 
 
 def parse_args() -> argparse.Namespace:
@@ -170,6 +173,8 @@ def row_from_activity(act: Dict[str, str], mssante: Dict[str, str]) -> Dict[str,
         "role_start": "",
         "role_end": "",
         "role_active": "true",
+        "organization_city_code": coord("Code commune"),
+        "organization_commune": coord("Libellé commune"),
     }
 
 
@@ -183,7 +188,7 @@ def main() -> None:
     )
     mssante = load_mssante(mssante_zip, args.code)
     output = Path(args.output)
-    fields: List[str] = enriched_fieldnames()
+    fields: List[str] = enriched_fieldnames() + EXTRA_FIELDS
 
     seen: set[tuple] = set()
     read = written = no_contact = duplicates = 0

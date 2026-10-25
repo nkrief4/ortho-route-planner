@@ -11,6 +11,7 @@ Implémente :
 """
 
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -54,14 +55,16 @@ def _save_cache(cache: dict, cache_path: Path) -> None:
 #  Appel API
 # ═══════════════════════════════════════════════════════════════════════
 
-def _call_api(query: str, postcode: str = "") -> dict:
+def _call_api(query: str, postcode: str = "", **filters: str) -> dict:
     """
     Appelle l'API de géocodage avec retry et back-off.
+    filters : autres filtres de l'API (citycode, type…), ignorés s'ils sont vides.
     Retourne le JSON brut (GeoJSON FeatureCollection).
     """
     params: dict[str, str | int] = {"q": query, "limit": 1}
     if postcode:
         params["postcode"] = postcode
+    params.update({k: v for k, v in filters.items() if v})
 
     url = f"{GEOCODE_URL}?{urlencode(params)}"
 
@@ -113,7 +116,28 @@ def _parse_response(data: dict) -> dict:
         "longitude": coords[0],
         "score": round(score, 4),
         "status": status,
+        "postcode": props.get("postcode", ""),
+        "citycode": props.get("citycode", ""),
     }
+
+
+def _department(code: str) -> str:
+    """Département d'un code postal ou INSEE : 2 chiffres, 3 en outre-mer (97x)."""
+    code = code.strip() if isinstance(code, str) else ""
+    if code[:2] in ("2A", "2B"):
+        return "20"
+    return code[:3] if code.startswith("97") else code[:2]
+
+
+def result_department(result: dict) -> str:
+    """Département d'un résultat de géocodage (y compris les entrées du cache
+    antérieures à l'ajout du champ postcode, via le CP du libellé)."""
+    postcode = result.get("postcode")
+    if not isinstance(postcode, str) or not postcode:
+        label = result.get("geocoded_label")
+        match = re.search(r"\b(\d{5})\b", label if isinstance(label, str) else "")
+        postcode = match.group(1) if match else ""
+    return _department(postcode)
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -125,40 +149,62 @@ def geocode_one(
     postal_code: str,
     city: str,
     address_normalized: str,
+    city_code: str = "",
 ) -> dict:
     """
     Géocode une adresse avec 3 niveaux de fallback :
-      1. address_line + postcode   (le plus précis)
-      2. address_normalized seul   (si score trop bas)
-      3. city + postcode           (géoloc au niveau commune)
+      1. address_line filtrée sur la commune (code INSEE), puis sur le code postal.
+         Le code INSEE marche aussi pour les CP CEDEX, que l'API ne connaît pas.
+      2. address_normalized sans filtre, accepté seulement dans la bonne commune
+         (ou le bon département si le code INSEE est inconnu) : sinon on obtient une
+         rue homonyme d'une autre ville (Marseille 13015 → Paris 75015)
+      3. commune seule : centre de la commune, statut WARNING au mieux
     """
-    # ── Niveau 1 : adresse + code postal ─────────────────────────────
+    expected_dept = _department(postal_code or city_code)
+
+    def same_place(result: dict) -> bool:
+        if city_code:
+            return result.get("citycode") == city_code
+        return not expected_dept or result_department(result) == expected_dept
+
+    # ── Niveau 1 : adresse + commune ou code postal ──────────────────
     if address_line:
-        try:
-            data = _call_api(address_line, postal_code)
-            result = _parse_response(data)
-            if result["score"] >= 0.3:
-                return result
-        except Exception:
-            pass
+        for filters in ({"citycode": city_code}, {"postcode": postal_code}):
+            if not any(filters.values()):
+                continue
+            try:
+                result = _parse_response(_call_api(address_line, **filters))
+                if result["score"] >= 0.3:
+                    return result
+            except Exception:
+                pass
 
     # ── Niveau 2 : adresse normalisée complète ───────────────────────
     if address_normalized:
         try:
-            data = _call_api(address_normalized)
-            result = _parse_response(data)
-            if result["score"] > 0:
+            result = _parse_response(_call_api(address_normalized))
+            if result["score"] > 0 and same_place(result):
                 return result
         except Exception:
             pass
 
     # ── Niveau 3 : ville seule ───────────────────────────────────────
-    if city:
-        try:
-            data = _call_api(city, postal_code)
-            return _parse_response(data)
-        except Exception:
-            pass
+    if city or city_code:
+        for query, filters in (
+            (city, {"citycode": city_code, "type": "municipality"}),
+            (city, {"postcode": postal_code}),
+        ):
+            if not filters.get("citycode") and not filters.get("postcode"):
+                continue
+            try:
+                result = _parse_response(_call_api(query or city_code, **filters))
+                if result["score"] > 0:
+                    # Position approximative (centre de la commune) : jamais OK
+                    if result["status"] == "OK":
+                        result["status"] = "WARNING"
+                    return result
+            except Exception:
+                pass
 
     return {
         "geocoded_label": "",
@@ -216,6 +262,7 @@ def geocode_sites(
                     row["postal_code_clean"],
                     row["city_clean"],
                     row["address_normalized"],
+                    city_code=row.get("city_code", ""),
                 )
             except Exception as exc:
                 print(f"    [erreur] site {key}: {exc}", file=sys.stderr)

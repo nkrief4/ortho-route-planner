@@ -22,12 +22,17 @@ def create_sites_table(df: pd.DataFrame) -> pd.DataFrame:
       address_line_clean
       postal_code_clean
       city_clean
+      city_group  (commune pour la recherche par ville, cf. clean.city_group)
+      city_code   (code INSEE de la commune, vide si inconnu)
       nb_orthos  (nombre d'orthophonistes associés à ce site)
 
     Les lignes sans address_key (adresses vides) sont exclues.
     """
     # Filtrer les lignes sans clé
     df_valid = df[df["address_key"] != ""].copy()
+    # Code INSEE : absent des extractions via l'API FHIR (scraping/main.py)
+    if "organization_city_code" not in df_valid:
+        df_valid["organization_city_code"] = ""
 
     # Dédoublonner : garder la première occurrence de chaque adresse
     df_sites = (
@@ -38,6 +43,8 @@ def create_sites_table(df: pd.DataFrame) -> pd.DataFrame:
             address_line_clean=("address_line_clean", "first"),
             postal_code_clean=("postal_code_clean", "first"),
             city_clean=("city_clean", "first"),
+            city_group=("city_group", "first"),
+            city_code=("organization_city_code", "first"),
             nb_orthos=("row_id", "count"),
         )
         .reset_index()
@@ -47,6 +54,27 @@ def create_sites_table(df: pd.DataFrame) -> pd.DataFrame:
     df_sites.insert(0, "site_id", range(1, len(df_sites) + 1))
 
     return df_sites
+
+
+def add_postal_code_group(df_sites: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ajoute postal_code_group : le code postal de la position géocodée (celui de
+    l'arrondissement pour un CEDEX : 75651 → 75013), sinon celui de l'adresse.
+    Sert aux filtres par code postal / arrondissement.
+    """
+    df = df_sites.copy()
+    located = df["status"].isin(["OK", "WARNING"])
+    label_cp = df["geocoded_label"].fillna("").str.extract(r"\b(\d{5})\b")[0].fillna("")
+    if "postcode" in df:
+        geo_cp = df["postcode"].fillna("").astype(str)
+        geo_cp = geo_cp.where(geo_cp != "", label_cp)
+    else:
+        geo_cp = label_cp
+    # Même département que l'adresse : sinon le géocodage s'est trompé de ville
+    same_dept = geo_cp.str[:2] == df["postal_code_clean"].str[:2]
+    use_geo = located & (geo_cp != "") & same_dept
+    df["postal_code_group"] = geo_cp.where(use_geo, df["postal_code_clean"])
+    return df
 
 
 def merge_site_ids(
