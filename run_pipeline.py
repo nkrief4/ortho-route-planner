@@ -29,8 +29,8 @@ def parse_args() -> argparse.Namespace:
         help="Phases à exécuter : 1,2,3,4,5,6,7,8 ou 'all'",
     )
     p.add_argument(
-        "--tsp-limit", type=int, default=30,
-        help="Temps max en secondes pour le solveur TSP (défaut: 30)",
+        "--tsp-limit", type=int, default=None,
+        help="Temps max en secondes pour le solveur TSP (défaut: auto, 1 à 10 s selon le nb de sites)",
     )
     p.add_argument(
         "--closed-loop", action="store_true",
@@ -228,7 +228,7 @@ def main() -> None:
         open_path = not args.closed_loop
         mode = "ouvert (pas de retour)" if open_path else "fermé (boucle)"
         print(f"  Mode : {mode}")
-        print(f"  Temps max solveur : {args.tsp_limit}s")
+        print(f"  Temps max solveur : {args.tsp_limit or 'auto'}s")
 
         route_order, total_duration = solve_tsp(
             matrix,

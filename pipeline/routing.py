@@ -5,9 +5,12 @@ Phase 6 : matrice NxN de durées (secondes) entre sites via OSRM Table API.
 Phase 7 : résolution du TSP (chemin le plus court) via OR-Tools.
 
 Limites :
-  - Le serveur OSRM public (router.project-osrm.org) est limité en débit.
-  - Le batching découpe la matrice en blocs pour respecter les limites d'URL.
-  - Pour > 500 sites, préférer un serveur OSRM local.
+  - Le serveur OSRM public (routing.openstreetmap.de, FOSSGIS) autorise 1 requête/s
+    et ralentit les requêtes rapprochées (~9 s chacune après la première).
+  - Une requête Table accepte 100 coordonnées : au-delà, la matrice est découpée
+    en blocs 50 x 50 (16 requêtes pour 200 sites, ~2 min 30 au premier calcul).
+  - Pour aller plus vite sur les grandes zones, il faudrait un serveur OSRM à soi
+    ou une API de matrice payante.
 """
 
 import json
@@ -33,11 +36,17 @@ OSRM_SERVERS = {
     "foot":    "https://routing.openstreetmap.de/routed-foot",
 }
 DEFAULT_PROFILE = "driving"
-OSRM_BATCH = 50          # coordonnées par bloc
-OSRM_SLEEP = 1.0         # secondes entre requêtes (serveur public)
+OSRM_MAX_COORDS = 100    # coordonnées max par requête Table (au-delà : 400 TooBig)
+OSRM_BATCH = 50          # sources (et destinations) par bloc quand N > OSRM_MAX_COORDS
+OSRM_SLEEP = 1.0         # secondes entre requêtes (politique : 1 requête/s max)
 OSRM_TIMEOUT = 60
 OSRM_RETRIES = 3
 LARGE_DURATION = 999_999  # secondes (≈ 278 h) pour routes introuvables
+
+# Durées déjà obtenues, par (profil, départ, arrivée) : régénérer un itinéraire sur
+# la même zone (autre départ, sites visités retirés…) ne rappelle pas OSRM.
+_DURATION_CACHE: dict[tuple, float] = {}
+DURATION_CACHE_MAX = 500_000  # paires (~60 Mo), vidé au-delà
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -76,7 +85,9 @@ def _osrm_table(
                     raise RuntimeError(f"OSRM error: {data.get('code')} – {data.get('message','')}")
                 return data
         except (HTTPError, URLError, TimeoutError, OSError) as exc:
-            if attempt >= OSRM_RETRIES - 1:
+            # Une requête invalide (400 TooBig…) échouera à chaque fois
+            client_error = isinstance(exc, HTTPError) and 400 <= exc.code < 500 and exc.code != 429
+            if client_error or attempt >= OSRM_RETRIES - 1:
                 raise
             wait = 2 ** (attempt + 1)
             print(f"    [retry] OSRM attempt {attempt+1} failed ({exc}), wait {wait}s", file=sys.stderr)
@@ -85,13 +96,56 @@ def _osrm_table(
     return {}
 
 
+def _pair_key(profile: str, a: tuple[float, float], b: tuple[float, float]) -> tuple:
+    return (profile, round(a[0], 6), round(a[1], 6), round(b[0], 6), round(b[1], 6))
+
+
+def _fill_block(
+    matrix: np.ndarray,
+    coords: list[tuple[float, float]],
+    src: range,
+    dst: range,
+    profile: str,
+) -> bool:
+    """
+    Remplit matrix[src, dst] depuis le cache, sinon par un appel OSRM Table.
+    Retourne True si un appel réseau a été fait.
+    """
+    keys = [[_pair_key(profile, coords[i], coords[j]) for j in dst] for i in src]
+    if all(k in _DURATION_CACHE for row in keys for k in row):
+        for r, i in enumerate(src):
+            matrix[i, dst.start:dst.stop] = [_DURATION_CACHE[k] for k in keys[r]]
+        return False
+
+    if src == dst:
+        combined = [coords[i] for i in src]
+        src_idx = dst_idx = list(range(len(src)))
+    else:
+        combined = [coords[i] for i in src] + [coords[j] for j in dst]
+        src_idx = list(range(len(src)))
+        dst_idx = list(range(len(src), len(src) + len(dst)))
+
+    data = _osrm_table(combined, src_idx, dst_idx, profile=profile)
+    if len(_DURATION_CACHE) > DURATION_CACHE_MAX:
+        _DURATION_CACHE.clear()
+    for r, row_vals in enumerate(data.get("durations", [])):
+        for c, val in enumerate(row_vals):
+            if val is not None:
+                matrix[src[r], dst[c]] = val
+                _DURATION_CACHE[keys[r][c]] = val
+    return True
+
+
 def compute_duration_matrix(
     coords: list[tuple[float, float]],
     profile: str = DEFAULT_PROFILE,
 ) -> np.ndarray:
     """
     Calcule la matrice NxN de durées de trajet (secondes) via OSRM Table.
-    Gère le batching pour les grands jeux de coordonnées.
+
+    Jusqu'à OSRM_MAX_COORDS sites : un seul appel. Au-delà, blocs de
+    OSRM_BATCH x OSRM_BATCH (une requête par bloc, 1 par seconde max).
+    Les durées déjà connues viennent du cache mémoire.
 
     Retourne un np.ndarray de shape (N, N).
     Les routes introuvables valent LARGE_DURATION.
@@ -102,49 +156,32 @@ def compute_duration_matrix(
     if n == 1:
         return np.array([[0.0]])
 
-    B = OSRM_BATCH
-    n_chunks = math.ceil(n / B)
-    total_calls = n_chunks * n_chunks
+    B = n if n <= OSRM_MAX_COORDS else OSRM_BATCH
+    chunks = [range(start, min(start + B, n)) for start in range(0, n, B)]
+    total_calls = len(chunks) ** 2
     matrix = np.full((n, n), LARGE_DURATION, dtype=float)
 
     call = 0
-    for ci in range(n_chunks):
-        si, ei = ci * B, min((ci + 1) * B, n)
-        src_coords = coords[si:ei]
-
-        for cj in range(n_chunks):
-            sj, ej = cj * B, min((cj + 1) * B, n)
-            dst_coords = coords[sj:ej]
-
-            # Construire la liste combinée et les index source/dest
-            if ci == cj:
-                combined = src_coords
-                src_idx = list(range(len(combined)))
-                dst_idx = list(range(len(combined)))
-            else:
-                combined = src_coords + dst_coords
-                ns = len(src_coords)
-                src_idx = list(range(ns))
-                dst_idx = list(range(ns, ns + len(dst_coords)))
-
+    network_calls = 0
+    for src in chunks:
+        for dst in chunks:
             try:
-                data = _osrm_table(combined, src_idx, dst_idx, profile=profile)
-                durations = data.get("durations", [])
-                for r, row_vals in enumerate(durations):
-                    for c, val in enumerate(row_vals):
-                        if val is not None:
-                            matrix[si + r, sj + c] = val
+                fetched = _fill_block(matrix, coords, src, dst, profile)
             except Exception as exc:
+                fetched = True
                 print(
-                    f"    [warn] OSRM batch src=[{si}:{ei}] dst=[{sj}:{ej}] "
-                    f"échoué : {exc}",
+                    f"    [warn] OSRM batch src=[{src.start}:{src.stop}] "
+                    f"dst=[{dst.start}:{dst.stop}] échoué : {exc}",
                     file=sys.stderr,
                 )
 
             call += 1
+            if fetched:
+                network_calls += 1
+                if call < total_calls:
+                    time.sleep(OSRM_SLEEP)
             if call % 5 == 0 or call == total_calls:
-                print(f"    OSRM [{call}/{total_calls}] batches")
-            time.sleep(OSRM_SLEEP)
+                print(f"    OSRM [{call}/{total_calls}] blocs ({network_calls} requêtes)")
 
     # Diagonale = 0
     np.fill_diagonal(matrix, 0.0)
@@ -166,10 +203,25 @@ def compute_duration_matrix(
 #  TSP (OR-Tools)
 # ═══════════════════════════════════════════════════════════════════════
 
+def auto_time_limit(n: int) -> int:
+    """
+    Temps de recherche (s) suffisant selon le nombre de sites. Mesuré sur des
+    matrices réelles : 25 sites → optimum en < 1 s ; 86 et 192 sites → à moins
+    de 2 % du résultat obtenu en 30 s dès 5 s (10 s n'apporte rien de plus).
+    La recherche locale guidée ne s'arrête jamais d'elle-même avant la limite :
+    chaque seconde de trop est perdue.
+    """
+    if n <= 30:
+        return 1
+    if n <= 200:
+        return 5
+    return 10
+
+
 def solve_tsp(
     matrix: np.ndarray,
     open_path: bool = True,
-    time_limit: int = 30,
+    time_limit: int | None = None,
     start_index: int | None = None,
 ) -> tuple[list[int], float]:
     """
@@ -177,6 +229,7 @@ def solve_tsp(
 
     open_path=True  → pas de retour au point de départ (dummy depot)
     open_path=False → boucle fermée
+    time_limit      → secondes de recherche (None = auto_time_limit)
     start_index     → force le départ à cet index (None = auto)
 
     Retourne (route, total_duration_seconds).
@@ -225,7 +278,7 @@ def solve_tsp(
     params.local_search_metaheuristic = (
         routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
     )
-    params.time_limit.seconds = time_limit
+    params.time_limit.seconds = time_limit or auto_time_limit(n)
 
     solution = routing.SolveWithParameters(params)
 

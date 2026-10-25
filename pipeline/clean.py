@@ -8,6 +8,7 @@ Chaque ligne reçoit :
   - city_clean
   - address_normalized  (forme géocodable : ligne + CP + ville)
   - address_key          (MD5 de address_normalized → clé de dédoublonnage)
+  - city_group           (commune pour la recherche par ville, cf. city_group)
 """
 
 import hashlib
@@ -224,6 +225,33 @@ def normalize_address_fr(
 
 
 # ═══════════════════════════════════════════════════════════════════════
+#  Commune de regroupement (recherche par ville)
+# ═══════════════════════════════════════════════════════════════════════
+
+# "PARIS 15E ARRONDISSEMENT", "PARIS 15", "69002 LYON 02" → la ville entière
+# (mais pas PARIS L HOPITAL ni MARSEILLE EN BEAUVAISIS, qui sont d'autres communes)
+_PLM_RE = re.compile(
+    r"^(?:\d{5} )?(PARIS|LYON|MARSEILLE)"
+    r"(?: (?:SP )?\d{1,2}(?:E|ER|EME)?(?: ARRONDISSEMENT)?| \d{5})?$"
+)
+
+
+def city_group(commune: str, city: str) -> str:
+    """
+    Nom de commune servant à regrouper les sites dans la recherche par ville.
+
+    Indépendant de city_clean, qui entre dans address_key (et donc dans le cache
+    de géocodage) et doit rester stable. Utilise la commune officielle (INSEE)
+    quand elle est connue, sinon la ville de l'adresse. Les tirets et apostrophes
+    deviennent des espaces (BOURG-EN-BRESSE = BOURG EN BRESSE) et les
+    arrondissements de Paris, Lyon et Marseille sont rattachés à leur ville.
+    """
+    text = _normalize_city(commune or city)
+    text = _clean_spaces(re.sub(r"[-'’]", " ", text))
+    return _PLM_RE.sub(r"\1", text)
+
+
+# ═══════════════════════════════════════════════════════════════════════
 #  Application vectorisée sur le DataFrame
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -241,6 +269,11 @@ def apply_normalization(df: pd.DataFrame) -> pd.DataFrame:
         axis=1,
         result_type="expand",
     )
+    # Colonne absente des extractions via l'API FHIR (scraping/main.py)
+    communes = df["organization_commune"] if "organization_commune" in df else pd.Series("", index=df.index)
+    results["city_group"] = [
+        city_group(commune, city) for commune, city in zip(communes, df["organization_city"])
+    ]
     return pd.concat([df, results], axis=1)
 
 
