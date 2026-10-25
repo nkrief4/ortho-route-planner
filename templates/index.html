@@ -2761,7 +2761,7 @@
                 <div class="inline-fields">
                     <div class="field">
                         <label for="tspLimit">TSP (sec)</label>
-                        <input type="number" id="tspLimit" value="30" min="5" max="300">
+                        <input type="number" id="tspLimit" placeholder="Auto" min="1" max="300" title="Vide : durée adaptée au nombre de sites (1 à 10 s)">
                     </div>
                     <div class="field" style="display:flex;align-items:end;">
                         <div class="checkbox-field">
@@ -3412,7 +3412,7 @@
 
             const city = isZoneMode ? selectedZoneCity.name : selectedCity.name;
             const dept = isZoneMode ? document.getElementById('zoneDeptSelect').value : deptSelect.value;
-            const tspLimit = parseInt(document.getElementById('tspLimit').value) || 30;
+            const tspLimit = parseInt(document.getElementById('tspLimit').value) || null;  // null : auto
             const closedLoop = document.getElementById('closedLoop').checked;
 
             const startAddressInput = document.getElementById('startAddress').value.trim();

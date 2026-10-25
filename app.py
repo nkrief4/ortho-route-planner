@@ -440,7 +440,7 @@ def api_generate():
         "city": "PARIS",                       # Mode city : ville
         "dept": "75015",                       # Mode city : code postal
         "closed_loop": false,
-        "tsp_limit": 30,
+        "tsp_limit": 10,                       # Optionnel : auto selon le nb de sites
         "start_address": "15 Avenue des Champs-Élysées, Paris",
         "start_lat": 48.8698,                  # Pré-géocodé
         "start_lon": 2.3078,                   # Pré-géocodé
@@ -455,7 +455,8 @@ def api_generate():
     city_filter = (body.get("city") or "").strip().upper()
     dept_filter = (body.get("dept") or "").strip()
     closed_loop = body.get("closed_loop", False)
-    tsp_limit = int(body.get("tsp_limit", 30))
+    # Vide ou absent : durée adaptée au nombre de sites (routing.auto_time_limit)
+    tsp_limit = int(body["tsp_limit"]) if body.get("tsp_limit") else None
     transport_mode = body.get("transport_mode", "driving")
     if transport_mode not in ("driving", "foot"):
         transport_mode = "driving"
@@ -615,7 +616,8 @@ def api_generate():
 
     # ── Phase 7 : TSP ─────────────────────────────────────────────────
     open_path = not closed_loop
-    print(f"  [route] Résolution TSP (limit={tsp_limit}s, open={open_path})…")
+    limit_label = f"{tsp_limit}s" if tsp_limit else "auto"
+    print(f"  [route] Résolution TSP (limit={limit_label}, open={open_path})…")
 
     # Si on a un point de départ, forcer le TSP à commencer là
     if start_point_idx is not None:
