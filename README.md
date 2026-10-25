@@ -221,10 +221,16 @@ Seules les adresses absentes du cache sont envoyées à l'API.
 
 ### Fonctionnalités
 
-- **Recherche autocomplete** : tape quelques lettres pour filtrer parmi les ~7 000 villes
+- **Recherche autocomplete** : tape quelques lettres pour filtrer parmi les ~6 300 communes
+  (nom officiel INSEE : « BOURG-EN-BRESSE » et « BOURG EN BRESSE » ne font qu'une)
 - **Navigation clavier** : ↑↓ pour naviguer, Enter pour sélectionner
-- **Filtre par arrondissement** : pour Paris, Lyon, Marseille, etc.
-- **Génération d'itinéraire en temps réel** : calcul TSP + carte interactive
+- **Filtre par arrondissement** : pour Paris, Lyon, Marseille, etc. Le code postal retenu
+  est celui de la position geocodee : un cabinet en CEDEX (75651) apparait dans son
+  arrondissement (75013)
+- **Génération d'itinéraire en temps réel** : calcul TSP + carte interactive. Le temps de
+  calcul est automatique (1 s jusqu'a 30 sites, 5 s jusqu'a 200, 10 s au-dela) ; les
+  temps de trajet deja obtenus sont gardes en memoire, donc regenerer la meme zone
+  (autre depart, sites visites retires...) est quasi immediat
 - **Statistiques détaillées** : durée totale, moyenne par segment, nombre de sites
 - **Liste ordonnée** : ordre de visite optimal avec durées
 
@@ -252,9 +258,9 @@ http://127.0.0.1:5000
 | 1 | Chargement CSV + validation | pandas |
 | 2 | Normalisation adresses FR | regex, unicodedata |
 | 3 | Table sites dedoublonnee + mapping ortho-site | MD5, groupby |
-| 4 | Geocodage (cache, fallback, retry) | data.geopf.fr |
+| 4 | Geocodage (cache, fallback, retry ; filtre commune INSEE, controle de la commune) | data.geopf.fr |
 | 5 | Carte des sites (couleur par score) | Folium |
-| 6 | Matrice NxN durees routieres (batching) | OSRM Table API |
+| 6 | Matrice NxN durees routieres (1 requete jusqu'a 100 sites, blocs au-dela, cache) | OSRM Table API |
 | 7 | TSP - itineraire optimal | OR-Tools |
 | 8 | Carte de l'itineraire (trace routier) | OSRM Route + Folium |
 
@@ -288,6 +294,6 @@ venv/bin/python run_pipeline.py --phases all --dept 75005 --closed-loop --tsp-li
 | `--city` | Filtrer sur une ville (ex: `PARIS`) |
 | `--dept` | Filtrer sur un code postal (ex: `75`, `75005`, `92`) |
 | `--closed-loop` | TSP en boucle fermee (retour au depart) |
-| `--tsp-limit` | Temps max du solveur TSP en secondes (defaut: 30) |
+| `--tsp-limit` | Temps max du solveur TSP en secondes (defaut: auto, 1 a 10 s) |
 | `--input` | Chemin CSV source (defaut: data/enriched/) |
 | `--output` | Dossier de sortie (defaut: output/) |
