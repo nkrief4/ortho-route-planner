@@ -9,15 +9,18 @@ Usage :
 """
 
 import argparse
+import io
 import math
+import re
 import sys
 import time
 import unicodedata
+from datetime import date
 from pathlib import Path
 
 import gender_guesser.detector as gender_detector
 import pandas as pd
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import Flask, jsonify, render_template, request, send_file, send_from_directory
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -236,7 +239,10 @@ def _build_directory(df_orthos: pd.DataFrame, df_sites: pd.DataFrame) -> pd.Data
         "address": df["organization_address_line"].str.strip(),
         "postal_code": first_filled("postal_code_clean", "organization_postal_code"),
         "city": first_filled(*(["organization_commune"] if "organization_commune" in df else []),
-                             "city_clean", "organization_city"),
+                             "city_clean", "organization_city")
+                # Commune INSEE : "Paris 13e  Arrondissement" → "Paris"
+                .str.replace(r"\s+", " ", regex=True)
+                .str.replace(r"^(Paris|Lyon|Marseille) \d+(?:e|er) Arrondissement$", r"\1", regex=True),
         "phone": first_filled("organization_phone", "role_phone"),
         "email": first_filled("organization_email", "role_email"),
         "mssante": df["source_email"].str.strip(),
@@ -301,32 +307,22 @@ def api_cities():
     return jsonify(_data["cities"])
 
 
-@app.route("/api/orthos")
-def api_orthos():
+def _filter_directory(args) -> pd.DataFrame:
     """
-    Annuaire paginé des orthophonistes.
-    Query : q (recherche libre), city (début du nom de ville), cp (début du
-    code postal), has_phone=1, has_email=1, sort (name|organization|
-    postal_code|city), order (asc|desc), page (1..), per_page (1-200).
+    Orthophonistes de l'annuaire correspondant aux filtres, triés.
+    Query : q (recherche libre), city (ville exacte si elle existe, sinon début
+    du nom), cp (début du code postal), has_phone=1, has_email=1 (email ou
+    MSSanté), sort (name|organization|postal_code|city), order (asc|desc).
     """
-    if not _data["ready"]:
-        return jsonify({"error": "Données pas encore chargées"}), 503
-
     df = _data["df_directory"]
-    args = request.args
-
-    try:
-        page = max(int(args.get("page", 1)), 1)
-        per_page = min(max(int(args.get("per_page", 50)), 1), 200)
-    except ValueError:
-        return jsonify({"error": "page et per_page doivent être des entiers"}), 400
-
     mask = pd.Series(True, index=df.index)
     for term in _normalize_search(args.get("q", "")).split():
         mask &= df["_search"].str.contains(term, regex=False)
     city = _normalize_search(args.get("city", ""))
     if city:
-        mask &= df["_city"].str.startswith(city)
+        # "Paris" = Paris seulement (pas Paris-l'Hôpital) ; "Par" = toutes les villes en Par…
+        exact = df["_city"] == city
+        mask &= exact if exact.any() else df["_city"].str.startswith(city)
     cp = args.get("cp", "").strip()
     if cp:
         mask &= df["_cp"].str.startswith(cp)
@@ -336,7 +332,23 @@ def api_orthos():
         mask &= (df["email"] != "") | (df["mssante"] != "")
 
     sort_cols = DIRECTORY_SORTS.get(args.get("sort", "name"), DIRECTORY_SORTS["name"])
-    result = df[mask].sort_values(sort_cols, ascending=args.get("order") != "desc")
+    return df[mask].sort_values(sort_cols, ascending=args.get("order") != "desc")
+
+
+@app.route("/api/orthos")
+def api_orthos():
+    """Annuaire paginé des orthophonistes : filtres de _filter_directory + page (1..), per_page (1-200)."""
+    if not _data["ready"]:
+        return jsonify({"error": "Données pas encore chargées"}), 503
+
+    args = request.args
+    try:
+        page = max(int(args.get("page", 1)), 1)
+        per_page = min(max(int(args.get("per_page", 50)), 1), 200)
+    except ValueError:
+        return jsonify({"error": "page et per_page doivent être des entiers"}), 400
+
+    result = _filter_directory(args)
 
     start = (page - 1) * per_page
     page_df = result.iloc[start:start + per_page][DIRECTORY_COLUMNS]
@@ -345,11 +357,106 @@ def api_orthos():
 
     return jsonify({
         "total": int(len(result)),
-        "total_all": int(len(df)),
+        "total_all": int(len(_data["df_directory"])),
         "page": page,
         "per_page": per_page,
         "items": items,
     })
+
+
+# Colonnes du fichier exporté : (en-tête, colonne de l'annuaire, largeur)
+EXPORT_COLUMNS = [
+    ("Civilité", "civility", 11), ("Nom", "family_name", 22), ("Prénom", "given_names", 20),
+    ("Cabinet", "organization", 34), ("Adresse", "address", 36), ("Code postal", "postal_code", 12),
+    ("Ville", "city", 22), ("Téléphone", "phone", 16), ("Email", "email", 34),
+    ("MSSanté", "mssante", 38), ("RPPS", "rpps", 14),
+]
+
+
+def _format_phone(phone: str) -> str:
+    """'+33781126829' ou '0781126829' → '07 81 12 68 29' (texte : Excel garde le 0)."""
+    digits = re.sub(r"\D", "", phone)
+    if len(digits) == 11 and digits.startswith("33"):
+        digits = "0" + digits[2:]
+    return " ".join(digits[i:i + 2] for i in range(0, 10, 2)) if len(digits) == 10 else phone
+
+
+def _export_filename(args) -> str:
+    parts = ["orthophonistes"]
+    for value in (args.get("city", ""), args.get("cp", ""), args.get("q", "")):
+        slug = _normalize_search(value).lower().replace(" ", "-")
+        if slug:
+            parts.append(slug)
+    if args.get("has_phone") == "1":
+        parts.append("avec-telephone")
+    if args.get("has_email") == "1":
+        parts.append("avec-email")
+    parts.append(date.today().isoformat())
+    return "_".join(parts) + ".xlsx"
+
+
+@app.route("/api/orthos/export")
+def api_orthos_export():
+    """Fichier Excel des orthophonistes de l'annuaire avec les mêmes filtres que /api/orthos."""
+    from openpyxl import Workbook
+    from openpyxl.cell import WriteOnlyCell
+    from openpyxl.styles import Font, PatternFill
+
+    if not _data["ready"]:
+        return jsonify({"error": "Données pas encore chargées"}), 503
+
+    result = _filter_directory(request.args)
+    if result.empty:
+        return jsonify({"error": "Aucun orthophoniste ne correspond à ces critères"}), 404
+
+    wb = Workbook(write_only=True)
+    ws = wb.create_sheet("Orthophonistes")
+    for i, (_, _, width) in enumerate(EXPORT_COLUMNS):
+        ws.column_dimensions[chr(ord("A") + i)].width = width
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = f"A1:{chr(ord('A') + len(EXPORT_COLUMNS) - 1)}{len(result) + 1}"
+
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill("solid", fgColor="2563EB")
+    header = []
+    for title, _, _ in EXPORT_COLUMNS:
+        cell = WriteOnlyCell(ws, value=title)
+        cell.font, cell.fill = header_font, header_fill
+        header.append(cell)
+    ws.append(header)
+
+    for row in result[[col for _, col, _ in EXPORT_COLUMNS]].itertuples(index=False):
+        values = dict(zip((col for _, col, _ in EXPORT_COLUMNS), row))
+        values["phone"] = _format_phone(values["phone"])
+        values["given_names"] = values["given_names"].title()
+        ws.append([values[col] for _, col, _ in EXPORT_COLUMNS])
+
+    # Onglet "Filtres" : de quoi savoir d'où vient la liste en rouvrant le fichier
+    info = wb.create_sheet("Filtres")
+    info.column_dimensions["A"].width = 22
+    info.column_dimensions["B"].width = 60
+    args = request.args
+    for label, value in [
+        ("Exporté le", date.today().strftime("%d/%m/%Y")),
+        ("Orthophonistes", len(result)),
+        ("Recherche", args.get("q", "")),
+        ("Ville", args.get("city", "")),
+        ("Code postal / dépt.", args.get("cp", "")),
+        ("Avec téléphone", "oui" if args.get("has_phone") == "1" else "non"),
+        ("Avec email", "oui" if args.get("has_email") == "1" else "non"),
+        ("Source", "Annuaire Santé (ANS), données en libre accès"),
+    ]:
+        info.append([label, value])
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=_export_filename(request.args),
+    )
 
 
 @app.route("/api/map")
