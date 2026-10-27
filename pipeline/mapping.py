@@ -156,6 +156,8 @@ def create_route_map(
         # Construire la popup avec les noms des orthophonistes
         orthos_list = row.get("orthos_list", [])
         popup_html = f"<b>#{order + 1}</b> – {row.get('geocoded_label', '')}<br>"
+        if row.get("status") == "WARNING":
+            popup_html += "<i style='color:#d97706'>≈ Position approximative</i><br>"
 
         if orthos_list and len(orthos_list) > 0:
             popup_html += "<br><b>Orthophonistes :</b><br>"

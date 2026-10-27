@@ -1010,6 +1010,18 @@
             margin-bottom: 4px;
         }
 
+        .approx-badge {
+            display: inline-block;
+            margin-bottom: 4px;
+            padding: 1px 8px;
+            border-radius: var(--radius-full);
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
         .route-meta, .route-detail .meta {
             font-size: 12px;
             color: var(--text-muted);
@@ -3390,6 +3402,12 @@
         // ── Generate route ───────────────────────────────
         generateBtn.addEventListener('click', generateRoute);
 
+        // Adresse officielle du cabinet si sa position est approximative, sinon le libellé géocodé
+        function routeAddress(r) {
+            if (!r.address) return r.label || '';
+            return [r.address, [r.postal_code, r.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+        }
+
         async function generateRoute() {
             const isZoneMode = searchMode === 'zone';
 
@@ -3583,7 +3601,8 @@
                         div.innerHTML = `
                             <div class="${numClass}">${isVisited ? '✓' : r.order}</div>
                             <div class="route-detail">
-                                <div class="addr" title="${r.label}">${r.label || '—'}</div>
+                                <div class="addr" title="${escapeHtml(routeAddress(r))}">${escapeHtml(routeAddress(r)) || '—'}</div>
+                                ${r.approximate ? '<div class="approx-badge" title="Le cabinet n\'a été localisé qu\'à peu près : vérifiez l\'adresse sur place">≈ approximatif</div>' : ''}
                                 <div class="ortho-names" style="overflow: visible;">${namesHtml}</div>
                                 ${visitedBadge}
                             </div>
@@ -3702,7 +3721,8 @@
                 div.innerHTML = `
                     <div class="${numClass}">${isVisited ? '✓' : r.order}</div>
                     <div class="route-detail">
-                        <div class="addr" title="${r.label}">${r.label || '—'}</div>
+                        <div class="addr" title="${escapeHtml(routeAddress(r))}">${escapeHtml(routeAddress(r)) || '—'}</div>
+                                ${r.approximate ? '<div class="approx-badge" title="Le cabinet n\'a été localisé qu\'à peu près : vérifiez l\'adresse sur place">≈ approximatif</div>' : ''}
                         <div class="ortho-names" style="overflow: visible;">${namesHtml}</div>
                         ${visitedBadge}
                     </div>

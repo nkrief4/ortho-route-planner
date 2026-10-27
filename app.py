@@ -650,9 +650,20 @@ def api_generate():
     # Pour chaque site de l'itinéraire, récupérer les orthos
     site_ids = df_route["site_id"].tolist()
     orthos_by_site = {}
+    # Position approximative (WARNING) : on affiche l'adresse officielle du cabinet,
+    # le libellé du géocodeur pouvant être une rue voisine ou la seule commune
+    approximate_sites = set(df_routable.loc[df_routable["status"] == "WARNING", "site_id"])
+    postal_address_by_site = {}
 
     for site_id in site_ids:
         orthos_at_site = df_orthos[df_orthos["site_id"] == site_id]
+        if site_id in approximate_sites and not orthos_at_site.empty:
+            first = orthos_at_site.iloc[0]
+            postal_address_by_site[site_id] = {
+                "address": str(first.get("organization_address_line", "")).strip(),
+                "postal_code": str(first.get("organization_postal_code", "")).strip(),
+                "city": str(first.get("organization_city", "")).strip(),
+            }
         orthos_list = []
         for _, ortho in orthos_at_site.iterrows():
             given = str(ortho.get("given_names", ""))
@@ -698,6 +709,9 @@ def api_generate():
             "cumul_min": float(r.get("cumul_min", 0)),
             "lat": lat,
             "lon": lon,
+            "approximate": site_id in approximate_sites,
+            # Adresse officielle, utilisée par la liste et les lettres (sites approximatifs)
+            **postal_address_by_site.get(site_id, {}),
         })
 
     total_min = total_duration / 60

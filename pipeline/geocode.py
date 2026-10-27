@@ -159,6 +159,10 @@ def geocode_one(
          (ou le bon département si le code INSEE est inconnu) : sinon on obtient une
          rue homonyme d'une autre ville (Marseille 13015 → Paris 75015)
       3. commune seule : centre de la commune, statut WARNING au mieux
+
+    Tout résultat retenu est dans la bonne commune : un score faible (< 0.5) donne
+    WARNING (« position approximative ») et non FAILED, pour garder le cabinet
+    dans les itinéraires. FAILED = aucune position trouvée.
     """
     expected_dept = _department(postal_code or city_code)
 
@@ -166,6 +170,11 @@ def geocode_one(
         if city_code:
             return result.get("citycode") == city_code
         return not expected_dept or result_department(result) == expected_dept
+
+    def approximate(result: dict) -> dict:
+        if result["status"] == "FAILED":
+            result["status"] = "WARNING"
+        return result
 
     # ── Niveau 1 : adresse + commune ou code postal ──────────────────
     if address_line:
@@ -175,7 +184,7 @@ def geocode_one(
             try:
                 result = _parse_response(_call_api(address_line, **filters))
                 if result["score"] >= 0.3:
-                    return result
+                    return approximate(result)
             except Exception:
                 pass
 
@@ -184,7 +193,7 @@ def geocode_one(
         try:
             result = _parse_response(_call_api(address_normalized))
             if result["score"] > 0 and same_place(result):
-                return result
+                return approximate(result)
         except Exception:
             pass
 
@@ -200,8 +209,7 @@ def geocode_one(
                 result = _parse_response(_call_api(query or city_code, **filters))
                 if result["score"] > 0:
                     # Position approximative (centre de la commune) : jamais OK
-                    if result["status"] == "OK":
-                        result["status"] = "WARNING"
+                    result["status"] = "WARNING"
                     return result
             except Exception:
                 pass
