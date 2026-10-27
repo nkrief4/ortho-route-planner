@@ -1010,6 +1010,18 @@
             margin-bottom: 4px;
         }
 
+        .approx-badge {
+            display: inline-block;
+            margin-bottom: 4px;
+            padding: 1px 8px;
+            border-radius: var(--radius-full);
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
         .route-meta, .route-detail .meta {
             font-size: 12px;
             color: var(--text-muted);
@@ -2163,6 +2175,11 @@
             font-size: 13px;
         }
 
+        .directory-options .btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
         .directory-count {
             margin-left: auto;
             font-size: 13px;
@@ -3016,6 +3033,12 @@
                     Avec email
                 </label>
                 <button type="button" class="btn btn-secondary" id="directoryReset">Réinitialiser</button>
+                <button type="button" class="btn btn-primary" id="directoryExport" title="Télécharger au format Excel la liste correspondant aux filtres">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                    </svg>
+                    Exporter (Excel)
+                </button>
                 <div class="directory-count" id="directoryCount" aria-live="polite"></div>
             </div>
             <div class="directory-hint">Cliquez sur un orthophoniste marqué 📍 pour le voir sur la carte.</div>
@@ -3390,6 +3413,12 @@
         // ── Generate route ───────────────────────────────
         generateBtn.addEventListener('click', generateRoute);
 
+        // Adresse officielle du cabinet si sa position est approximative, sinon le libellé géocodé
+        function routeAddress(r) {
+            if (!r.address) return r.label || '';
+            return [r.address, [r.postal_code, r.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+        }
+
         async function generateRoute() {
             const isZoneMode = searchMode === 'zone';
 
@@ -3583,7 +3612,8 @@
                         div.innerHTML = `
                             <div class="${numClass}">${isVisited ? '✓' : r.order}</div>
                             <div class="route-detail">
-                                <div class="addr" title="${r.label}">${r.label || '—'}</div>
+                                <div class="addr" title="${escapeHtml(routeAddress(r))}">${escapeHtml(routeAddress(r)) || '—'}</div>
+                                ${r.approximate ? '<div class="approx-badge" title="Le cabinet n\'a été localisé qu\'à peu près : vérifiez l\'adresse sur place">≈ approximatif</div>' : ''}
                                 <div class="ortho-names" style="overflow: visible;">${namesHtml}</div>
                                 ${visitedBadge}
                             </div>
@@ -3702,7 +3732,8 @@
                 div.innerHTML = `
                     <div class="${numClass}">${isVisited ? '✓' : r.order}</div>
                     <div class="route-detail">
-                        <div class="addr" title="${r.label}">${r.label || '—'}</div>
+                        <div class="addr" title="${escapeHtml(routeAddress(r))}">${escapeHtml(routeAddress(r)) || '—'}</div>
+                                ${r.approximate ? '<div class="approx-badge" title="Le cabinet n\'a été localisé qu\'à peu près : vérifiez l\'adresse sur place">≈ approximatif</div>' : ''}
                         <div class="ortho-names" style="overflow: visible;">${namesHtml}</div>
                         ${visitedBadge}
                     </div>
@@ -4779,6 +4810,7 @@
         const directoryCp = document.getElementById('directoryCp');
         const directoryHasPhone = document.getElementById('directoryHasPhone');
         const directoryHasEmail = document.getElementById('directoryHasEmail');
+        const directoryExport = document.getElementById('directoryExport');
         const DIRECTORY_PER_PAGE = 100;
         const directoryState = { page: 0, done: false, loading: false, requestId: 0 };
         let directoryCitiesFilled = false;
@@ -4876,6 +4908,7 @@
                 directoryCount.innerHTML = `<strong>${data.total.toLocaleString('fr-FR')}</strong> `
                     + `orthophoniste${data.total > 1 ? 's' : ''} sur ${data.total_all.toLocaleString('fr-FR')}`;
                 directoryStatus.textContent = data.total === 0 ? 'Aucun orthophoniste ne correspond à ces critères.' : '';
+                directoryExport.disabled = data.total === 0;
             } catch (e) {
                 if (requestId !== directoryState.requestId) return;
                 directoryStatus.textContent = `Impossible de charger l'annuaire (${e.message}).`;
@@ -5005,6 +5038,39 @@
                 loadDirectory(true);
             });
         });
+
+        // Export Excel de toute la liste filtrée (pas seulement les lignes chargées)
+        async function exportDirectory() {
+            const params = directoryQuery(1);
+            params.delete('page');
+            params.delete('per_page');
+            const label = directoryExport.innerHTML;
+            directoryExport.disabled = true;
+            directoryExport.textContent = 'Export en cours…';
+            try {
+                const resp = await fetch('/api/orthos/export?' + params);
+                if (!resp.ok) {
+                    const data = await resp.json().catch(() => ({}));
+                    throw new Error(data.error || `Erreur ${resp.status}`);
+                }
+                const blob = await resp.blob();
+                const match = /filename="?([^";]+)"?/.exec(resp.headers.get('Content-Disposition') || '');
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = match ? match[1] : 'orthophonistes.xlsx';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+            } catch (e) {
+                showToast(`Export impossible : ${e.message}`);
+            } finally {
+                directoryExport.innerHTML = label;
+                directoryExport.disabled = false;
+            }
+        }
+
+        directoryExport.addEventListener('click', exportDirectory);
 
         document.getElementById('directoryReset').addEventListener('click', () => {
             directorySearch.value = '';

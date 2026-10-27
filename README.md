@@ -232,7 +232,13 @@ Seules les adresses absentes du cache sont envoyées à l'API.
   temps de trajet deja obtenus sont gardes en memoire, donc regenerer la meme zone
   (autre depart, sites visites retires...) est quasi immediat
 - **Statistiques détaillées** : durée totale, moyenne par segment, nombre de sites
-- **Liste ordonnée** : ordre de visite optimal avec durées
+- **Liste ordonnée** : ordre de visite optimal avec durées. Les cabinets localises
+  seulement a peu pres (statut WARNING : rue voisine ou centre de la commune) sont
+  marques « ≈ approximatif » et affichent leur adresse officielle
+- **Annuaire** : recherche, filtres (ville, code postal, avec telephone, avec email) et
+  bouton « Exporter (Excel) » qui telecharge toute la liste filtree (onglet « Filtres »
+  rappelant les criteres). Un nom de ville complet ne garde que cette ville
+  (« Lyon » exclut Lyons-la-Foret)
 
 ### Interface
 
